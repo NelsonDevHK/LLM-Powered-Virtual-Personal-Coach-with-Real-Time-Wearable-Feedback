@@ -1,18 +1,25 @@
-import { useState } from 'react'
-import './App.css'
+import './App.css';
+import { useEffect, useState } from 'react';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [status, setStatus] = useState('checking...');
+
+  useEffect(() => {
+    fetch('http://localhost:3000/api/health')
+      .then(r => r.json())
+      .then(d => setStatus(d.status))
+      .catch(() => setStatus('error'));
+  }, []);
 
   return (
     <>
-      <div className='Navbar'>
+      <div className="Navbar">
         LLM-Powered-Virtual-Personal-Coach-with-Real-Time-Wearable-Feedback
       </div>
-
+      <p>API status: {status}</p>
+      {/* SPA for switching login form and component */}
     </>
-      /*This is later for switching login form or other componment */
-  )
+  );
 }
 
-export default App
+export default App;
