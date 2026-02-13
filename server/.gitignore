@@ -1,0 +1,12 @@
+# Ignore environment files
+.env
+.env.*
+*.env
+!.env.example
+!.env.template
+
+# macOS cruft
+.DS_Store
+
+# Node artifacts
+node_modules/

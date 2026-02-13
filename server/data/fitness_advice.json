@@ -1,0 +1,52 @@
+[
+  {
+    "id": "hr_high_beginner",
+    "content": "初学者心率超过170bpm时：立即减速至快走，采用'鼻吸口呼'呼吸法（2步吸气/2步呼气），待心率降至140以下再恢复慢跑。这是身体适应期的正常信号，切勿强行坚持。",
+    "metadata": {
+      "running_level": ["beginner"],
+      "heart_rate_zone": "high",
+      "scenario": "during_run",
+      "focus": "heart_rate_management"
+    }
+  },
+  {
+    "id": "recovery_24h",
+    "content": "高强度跑步后24小时内：进行10分钟低强度动态拉伸（高抬腿/弓步走），补充每公斤体重0.3g蛋白质（如60kg跑者需18g），睡眠保证7小时以上。避免连续两天高强度训练。",
+    "metadata": {
+      "running_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "any",
+      "scenario": "post_run",
+      "focus": "recovery"
+    }
+  },
+  {
+    "id": "pace_beginner_5k",
+    "content": "初学者5公里配速建议：采用'跑1分钟+走1分钟'间歇法，目标配速8:00-10:00/公里。重点不是速度而是完成全程，心率控制在（220-年龄）×60%~70%区间。",
+    "metadata": {
+      "running_level": ["beginner"],
+      "heart_rate_zone": "moderate",
+      "scenario": "planning",
+      "focus": "pace_strategy"
+    }
+  },
+  {
+    "id": "hydration_hot",
+    "content": "气温>30°C跑步时：每20分钟补水150ml（含电解质），避免一次性大量饮水。如出现头晕/恶心，立即停止运动并到阴凉处休息。建议选择清晨/傍晚时段训练。",
+    "metadata": {
+      "running_level": ["any"],
+      "heart_rate_zone": "any",
+      "scenario": "during_run",
+      "focus": "hydration"
+    }
+  },
+  {
+    "id": "knee_pain_form",
+    "content": "跑步时膝盖疼痛：检查跑姿是否'过度跨步'（脚落地点应在臀部正下方），尝试缩短步幅10%并提高步频至170+步/分钟。疼痛持续超过2天需就医排查髂胫束综合征。",
+    "metadata": {
+      "running_level": ["intermediate", "advanced"],
+      "heart_rate_zone": "any",
+      "scenario": "during_run",
+      "focus": "injury_prevention"
+    }
+  }
+]

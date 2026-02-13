@@ -1,6 +1,9 @@
 // server/db.js
 const mysql = require('mysql2/promise');
 const dotenv = require('dotenv');
+//oringally had these in .env file but for security reasons.
+//DB_PASSWORD=coxvok-7giNto
+//DB_NAME=fyp_coach
 
 dotenv.config();
 
