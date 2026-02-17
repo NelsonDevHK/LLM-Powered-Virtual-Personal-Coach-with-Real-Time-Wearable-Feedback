@@ -1,9 +1,12 @@
 // server/server.js
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
-const { pool } = require('./db');
-const { getLLMResponse } = require('./src/services/llm_client');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+// ✅ Add .js extension to local imports
+import { pool } from './src/config/db.js';
+import { initRAG } from './src/services/rag/index.js';
+import { getLLMResponse } from './src/services/llm_client.js';
 
 dotenv.config();
 
@@ -40,5 +43,9 @@ app.post('/api/ask', async (req, res) => {
   }
 });
 
+// 1. Initialize RAG (Load embeddings, connect to Chroma)
+console.log('🔄 Initializing RAG Engine...');
+await initRAG();
+console.log('✅ RAG Engine Ready');
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`API running on ${port}`));

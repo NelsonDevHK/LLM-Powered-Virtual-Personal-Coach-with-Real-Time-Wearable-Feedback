@@ -1,11 +1,9 @@
-const axios = require('axios');
-const dotenv = require('dotenv');
-
-// Load environment variables from .env if present
-dotenv.config();
+import axios from 'axios';
+import 'dotenv/config';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/chat';
-const MODEL_NAME = process.env.OLLAMA_MODEL_NAME || 'llama3.1';
+const MODEL_NAME = process.env.OLLAMA_MODEL_NAME || 'phi4-mini';
+
 
 
 function normalizeMessages(input) {
@@ -82,4 +80,4 @@ async function getLLMResponse(question) {
     }
 }
 
-module.exports = { getLLMResponse };
+export { getLLMResponse };
