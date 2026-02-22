@@ -1,9 +1,10 @@
 import { ChromaClient } from 'chromadb';
 import fs from 'fs';
 import path from 'path';
-import config from '../../config/rag_config.js';
+import config from '../../config/rag.config.js';
 import embeddingService from './embedding.js';
 
+import logger from '../../utils/logger.js';
 class RAGEngine {
   constructor() {
     this.client = null;
@@ -13,7 +14,7 @@ class RAGEngine {
 
   async initialize() {
     if (this.isInitialized) {
-      console.log('RAG Engine already initialized.');
+      logger.info('RAG Engine already initialized.');
       return;
     }
 
@@ -21,19 +22,20 @@ class RAGEngine {
       this.client = new ChromaClient({ path: config.CHROMA_HOST });
 
       await this.client.heartbeat();
-      console.log('[RAG] Connected to Chroma Server successfully.');
+      logger.info('[RAG] Connected to Chroma Server successfully.');
 
       // get or create collection
       this.collection = await this.client.getOrCreateCollection({
         name: config.COLLECTION_NAME,
+        metadata: { "hnsw:space": "cosine" },  // Use cosine similarity for better Euclidean Distance search results
       });
 
       this.isInitialized = true;
-      console.log(`[RAG] Engine initialized. Collection: ${config.COLLECTION_NAME}`);
+      logger.info(`[RAG] Engine initialized. Collection: ${config.COLLECTION_NAME}`);
 
       await this.loadAndStoreAdvice();
     } catch (err) {
-      console.error('Error initializing RAG Engine:', err?.response?.data || err?.message || err);
+      logger.error('Error initializing RAG Engine:', err?.response?.data || err?.message || err);
       throw new Error('Failed to initialize RAG Engine');
     }
   }
@@ -94,7 +96,7 @@ class RAGEngine {
    * @param {string} queryText
    * @param {number} top_k
    */
-  async query(queryText, top_k = 5) {
+  async query(queryText, top_k = 3) {
     if (!this.isInitialized) await this.initialize();
 
     console.log(`[RAG] Query received: ${queryText}`);

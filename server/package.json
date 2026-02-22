@@ -1,14 +1,21 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "type": "module", 
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/services/rag/test_rag.js",
+    "test:jest": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
   "dependencies": {
     "axios": "^1.13.5",
     "chromadb": "^3.3.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "mysql2": "^3.16.3",
+    "mysql2": "^3.17.2",
     "ollama": "^0.6.3",
     "winston": "^3.19.0"
   }

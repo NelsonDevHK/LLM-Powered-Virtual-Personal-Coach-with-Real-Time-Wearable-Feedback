@@ -1,21 +1,33 @@
-const { getAllUsers, getUserById, saveUser } = require('../database/db_data');
+import { userRepository, wearableRepository } from "../database/index.js";
+import logger from '../utils/logger.js';
 
-// Service layer: orchestrates data access, business logic, and validation.
-// Does NOT talk to the DB directly—delegates to database/db_data.js.
+export class UserDataService {
+    async getRagData(userId) {
+        try {
+            const userInfo = await userRepository.findById(userId);
+            const wearableData = await wearableRepository.findByUserId(userId);
 
-async function getUserData(userId) {
-    // Fetch a single user by id via the data access layer
-    return (await getUserById(userId));
+            // wearableData may be a single record or an array of records — pick the last record if it's an array
+            const wearableRecord = Array.isArray(wearableData)
+                ? wearableData[wearableData.length - 1]
+                : wearableData;
+
+            const ragDict = {
+                // keep the exact property name requested by the user
+                excercise_level: userInfo?.excercise_level ?? userInfo?.exercise_level ?? null,
+                fitness_goal: userInfo?.fitness_goal ?? null,
+                heart_rate: wearableRecord?.heart_rate ?? null,
+                current_speed: wearableRecord?.current_speed ?? wearableRecord?.speed ?? null,
+            };
+
+            logger.info(`Fetched RAG data for user_id=${userId}: ${JSON.stringify(ragDict, null, 2)}`);
+
+            return ragDict;
+        } catch (error) {
+            logger.error("Error fetching user data:", error);
+            throw error;
+        }
+    }
 }
 
-async function getAllUserData() {
-    // Example aggregator: fetch all users via the data access layer
-    return (await getAllUsers());
-}
-
-async function saveUserData(user) {
-    // Persist via the data access layer (upsert)
-    await saveUser(user);
-}
-
-module.exports = { getUserData, getAllUserData, saveUserData };
+export default new UserDataService();

@@ -1,8 +1,10 @@
 import axios from 'axios';
 import 'dotenv/config';
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434/api/chat';
-const MODEL_NAME = process.env.OLLAMA_MODEL_NAME || 'phi4-mini';
+// Support both OLLAMA_URL (full) and OLLAMA_HOST (base) for flexibility
+const OLLAMA_BASE = process.env.OLLAMA_HOST || 'http://localhost:11434';
+const MODEL_NAME = process.env.OLLAMA_LLM_MODEL_NAME || process.env.OLLAMA_MODEL || 'phi4-mini';
+const TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 120000); // 120s default to surface server errors
 
 
 
@@ -24,7 +26,7 @@ function buildEndpoint(url) {
 }
 
 async function getLLMResponse(question) {
-        const endpoint = buildEndpoint(OLLAMA_URL);
+        const endpoint = buildEndpoint(OLLAMA_BASE);
         const isGenerate = /\/api\/generate\/?$/.test(endpoint);
         const messages = normalizeMessages(question);
         const prompt = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
@@ -35,7 +37,7 @@ async function getLLMResponse(question) {
     try {
         const response = await axios.post(endpoint, payload, {
             headers: { Accept: 'application/json' },
-            timeout: 30000, // 30s timeout
+            timeout: TIMEOUT_MS,
         });
 
         const data = response?.data;
@@ -69,14 +71,19 @@ async function getLLMResponse(question) {
         // Ultimate fallback
         return '';
     } catch (err) {
-        if (err?.code === 'ECONNABORTED') {
-            return '❌ 錯誤：連唔到 Ollama 伺服器！請確認 Ollama 是否運行。';
+        // Propagate detailed errors so the API route can return proper HTTP 500
+        if (err?.response) {
+            const status = err.response.status;
+            const data = typeof err.response.data === 'string'
+                ? err.response.data
+                : JSON.stringify(err.response.data);
+            throw new Error(`Ollama API error ${status}: ${data}`);
         }
-        if (err?.code === 'ETIMEDOUT') {
-            return '❌ 錯誤：Ollama API 請求超時！請確認 Ollama 伺服器是否正常運行。';
+        if (err?.code === 'ECONNABORTED' || err?.code === 'ETIMEDOUT') {
+            throw new Error('❌ 錯誤：連唔到 Ollama 伺服器！請確認 Ollama 是否運行。');
         }
-        console.error('Ollama error:', err?.response?.data || err?.message || err);
-        return `❌ 發生錯誤: ${err?.message || '未知錯誤'}`;
+        console.error('Ollama error:', err?.message || err);
+        throw new Error(err?.message || '未知錯誤');
     }
 }
 

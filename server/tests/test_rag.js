@@ -1,38 +1,132 @@
-// Minimal test to verify RAG loading and retrieval
-const path = require('path');
-const RunnerRAGEngine = require('../services/rag');
+// src/services/rag/test_rag.js
+import { describe, it, before, after, mock } from 'node:test';
+import assert from 'node:assert';
+import { initRAG, queryRAG } from '../src/services/rag/index.js';
+import ragEngine from '../src/services/rag/engine.js';
 
-(async () => {
-  const engine = new RunnerRAGEngine();
+describe('RAG Service', () => {
+  // Store mock contexts for restoration
+  let initializeMock;
+  let queryMock;
 
-  // Resolve the JSON path relative to this test file
-  const jsonPath = path.resolve(__dirname, '../../data/fitness_advice.json');
-  console.log('Test JSON path:', jsonPath);
+  before(() => {
+    // Create mocks for engine methods
+    initializeMock = mock.method(ragEngine, 'initialize', async () => {
+      return Promise.resolve({ status: 'initialized' });
+    });
 
-  await engine.loadKnowledgeBase(jsonPath);
-
-  // Happy path test query
-  const userData = {
-    running_level: 'beginner',
-    current_motion: 'running',
-    heart_rate: 175,
-    age: 30,
-  };
-
-  const result = await engine.handleUserQuery(userData);
-  console.log('User data:', result.user_data);
-  console.log('Retrieved advice count:', result.retrieved_advice.length);
-  console.log('Top advice snippet:', (result.retrieved_advice[0] || '').slice(0, 120));
-
-  // Edge case: generic level and moderate HR
-  const resultAny = await engine.handleUserQuery({
-    running_level: 'any',
-    current_motion: 'walking',
-    heart_rate: 145,
-    age: 60,
+    queryMock = mock.method(ragEngine, 'query', async (question, top_k) => {
+      return Promise.resolve({
+        question,
+        top_k,
+        results: [
+          { content: 'Sample answer 1', score: 0.95 },
+          { content: 'Sample answer 2', score: 0.85 },
+          { content: 'Sample answer 3', score: 0.75 },
+        ],
+      });
+    });
   });
-  console.log('Retrieved advice (any level) count:', resultAny.retrieved_advice.length);
-})().catch(err => {
-  console.error('Test failed:', err);
-  process.exit(1);
+
+  after(() => {
+    // ✅ CORRECT: Use mock.restore() to restore all mocks
+    mock.restore();
+  });
+
+  describe('initRAG', () => {
+    it('should initialize the RAG engine successfully', async () => {
+      await initRAG();
+      assert.strictEqual(initializeMock.mock.callCount(), 1);
+    });
+
+    it('should call engine.initialize exactly once', async () => {
+      await initRAG();
+      assert.strictEqual(initializeMock.mock.callCount(), 2);
+    });
+  });
+
+  describe('queryRAG', () => {
+    it('should query with default top_k value', async () => {
+      const question = 'What is machine learning?';
+      const result = await queryRAG(question);
+
+      assert.ok(result);
+      assert.strictEqual(result.question, question);
+      assert.strictEqual(result.top_k, 3);
+      assert.ok(Array.isArray(result.results));
+      assert.strictEqual(result.results.length, 3);
+    });
+
+    it('should query with custom top_k value', async () => {
+      const question = 'Explain neural networks';
+      const top_k = 5;
+      const result = await queryRAG(question, top_k);
+
+      assert.strictEqual(result.question, question);
+      assert.strictEqual(result.top_k, top_k);
+    });
+
+    it('should handle empty question string', async () => {
+      const question = '';
+      const result = await queryRAG(question);
+
+      assert.ok(result);
+      assert.strictEqual(result.question, '');
+    });
+
+    it('should call engine.query with correct parameters', async () => {
+      const question = 'Test question';
+      const top_k = 2;
+
+      await queryRAG(question, top_k);
+
+      const lastCall = queryMock.mock.calls[queryMock.mock.callCount() - 1];
+      assert.strictEqual(lastCall.arguments[0], question);
+      assert.strictEqual(lastCall.arguments[1], top_k);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle engine initialization errors', async () => {
+      initializeMock.mock.mockImplementation(async () => {
+        throw new Error('Initialization failed');
+      });
+
+      await assert.rejects(
+        async () => await initRAG(),
+        {
+          name: 'Error',
+          message: 'Initialization failed',
+        }
+      );
+
+      // Restore original implementation
+      initializeMock.mock.mockImplementation(async () => {
+        return Promise.resolve({ status: 'initialized' });
+      });
+    });
+
+    it('should handle query errors', async () => {
+      queryMock.mock.mockImplementation(async () => {
+        throw new Error('Query failed');
+      });
+
+      await assert.rejects(
+        async () => await queryRAG('test question'),
+        {
+          name: 'Error',
+          message: 'Query failed',
+        }
+      );
+
+      // Restore original implementation
+      queryMock.mock.mockImplementation(async (question, top_k) => {
+        return Promise.resolve({
+          question,
+          top_k,
+          results: [],
+        });
+      });
+    });
+  });
 });

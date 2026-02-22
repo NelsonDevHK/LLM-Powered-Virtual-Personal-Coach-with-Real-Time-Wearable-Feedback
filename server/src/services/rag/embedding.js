@@ -1,5 +1,5 @@
 import ollama from 'ollama';
-import config from '../../config/rag_config.js';
+import config from '../../config/rag.config.js';
 
 class OllamaEmbeddingService {
   constructor() {

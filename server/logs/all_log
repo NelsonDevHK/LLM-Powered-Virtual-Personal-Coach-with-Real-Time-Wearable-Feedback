@@ -1,0 +1,69 @@
+{"connectionLimit":10,"database":"02test","host":"localhost","level":"info","message":"Creating MySQL pool with config:","password":"password","port":3306,"timestamp":"2026-02-21 22:14:31","user":"root"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 22:14:31"}
+{"connectionLimit":10,"database":"02test","host":"localhost","level":"info","message":"Creating MySQL pool with config:","password":"password","port":3306,"timestamp":"2026-02-21 22:38:18","user":"root"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 22:38:18"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [object Object]","timestamp":"2026-02-21 22:38:18"}
+{"current_speed":"7.50","excercise_level":"Beginner","fitness_goal":"Weight Loss","heart_rate":88,"level":"info","message":"Fetched RAG data for user_id=1:","timestamp":"2026-02-21 22:38:18"}
+{"level":"error","message":"Database query error:","timestamp":"2026-02-21 22:38:18"}
+{"level":"error","message":"Database test query failed:","timestamp":"2026-02-21 22:38:18"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"localhost\",\"user\":\"root\",\"password\":\"password\",\"database\":\"02test\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"stage: 1.5 - testing database connection and schema","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [\n  {\n    \"user_id\": 1,\n    \"user_name\": \"alice\",\n    \"password\": \"password123\",\n    \"name\": \"Alice Kim\",\n    \"exercise_level\": \"Beginner\",\n    \"fitness_goal\": \"Weight Loss\",\n    \"injuries\": \"Knee pain\",\n    \"created_at\": \"2026-02-16T14:55:14.000Z\"\n  }\n]","timestamp":"2026-02-21 22:46:57"}
+{"level":"error","message":"Database query error: Table '02test.user' doesn't exist","timestamp":"2026-02-21 22:46:57"}
+{"level":"error","message":"Database test query failed:","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"stage 2 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": \"Beginner\",\n  \"fitness_goal\": \"Weight Loss\",\n  \"heart_rate\": 88,\n  \"current_speed\": \"7.50\"\n}","timestamp":"2026-02-21 22:46:57"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"localhost\",\"user\":\"root\",\"password\":\"password\",\"database\":\"02test\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"stage: 1.5 - testing database connection and schema","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [\n  {\n    \"user_id\": 1,\n    \"user_name\": \"alice\",\n    \"password\": \"password123\",\n    \"name\": \"Alice Kim\",\n    \"exercise_level\": \"Beginner\",\n    \"fitness_goal\": \"Weight Loss\",\n    \"injuries\": \"Knee pain\",\n    \"created_at\": \"2026-02-16T14:55:14.000Z\"\n  }\n]","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": \"Beginner\",\n  \"fitness_goal\": \"Weight Loss\",\n  \"heart_rate\": 88,\n  \"current_speed\": \"7.50\"\n}","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"User table schema: [\n  {\n    \"Field\": \"user_id\",\n    \"Type\": \"int\",\n    \"Null\": \"NO\",\n    \"Key\": \"PRI\",\n    \"Default\": null,\n    \"Extra\": \"auto_increment\"\n  },\n  {\n    \"Field\": \"user_name\",\n    \"Type\": \"varchar(100)\",\n    \"Null\": \"NO\",\n    \"Key\": \"\",\n    \"Default\": null,\n    \"Extra\": \"\"\n  },\n  {\n    \"Field\": \"password\",\n    \"Type\": \"varchar(255)\",\n    \"Null\": \"NO\",\n    \"Key\": \"\",\n    \"Default\": null,\n    \"Extra\": \"\"\n  },\n  {\n    \"Field\": \"name\",\n    \"Type\": \"varchar(100)\",\n    \"Null\": \"NO\",\n    \"Key\": \"\",\n    \"Default\": null,\n    \"Extra\": \"\"\n  },\n  {\n    \"Field\": \"exercise_level\",\n    \"Type\": \"varchar(50)\",\n    \"Null\": \"NO\",\n    \"Key\": \"\",\n    \"Default\": null,\n    \"Extra\": \"\"\n  },\n  {\n    \"Field\": \"fitness_goal\",\n    \"Type\": \"varchar(50)\",\n    \"Null\": \"NO\",\n    \"Key\": \"\",\n    \"Default\": null,\n    \"Extra\": \"\"\n  },\n  {\n    \"Field\": \"injuries\",\n    \"Type\": \"text\",\n    \"Null\": \"YES\",\n    \"Key\": \"\",\n    \"Default\": null,\n    \"Extra\": \"\"\n  },\n  {\n    \"Field\": \"created_at\",\n    \"Type\": \"datetime\",\n    \"Null\": \"YES\",\n    \"Key\": \"\",\n    \"Default\": \"CURRENT_TIMESTAMP\",\n    \"Extra\": \"DEFAULT_GENERATED\"\n  }\n]","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"stage 2 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 22:47:44"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"localhost\",\"user\":\"root\",\"password\":\"password\",\"database\":\"02test\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [\n  {\n    \"user_id\": 1,\n    \"user_name\": \"alice\",\n    \"password\": \"password123\",\n    \"name\": \"Alice Kim\",\n    \"exercise_level\": \"Beginner\",\n    \"fitness_goal\": \"Weight Loss\",\n    \"injuries\": \"Knee pain\",\n    \"created_at\": \"2026-02-16T14:55:14.000Z\"\n  }\n]","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": \"Beginner\",\n  \"fitness_goal\": \"Weight Loss\",\n  \"heart_rate\": 88,\n  \"current_speed\": \"7.50\"\n}","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of '$88' bpm, \nrunning at '${speed}' km/h, and is a '${running_level}' runner. \nThe user is currently in the '${scenario}' scenario, focusing on '${focus}'. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"stage 2 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 23:03:17"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-21 23:48:13"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"localhost\",\"user\":\"root\",\"password\":\"password\",\"database\":\"02test\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-21 23:48:13"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 23:48:13"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-21 23:48:13"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-21 23:48:13"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [\n  {\n    \"user_id\": 1,\n    \"user_name\": \"alice\",\n    \"password\": \"password123\",\n    \"name\": \"Alice Kim\",\n    \"exercise_level\": \"Beginner\",\n    \"fitness_goal\": \"Weight Loss\",\n    \"injuries\": \"Knee pain\",\n    \"created_at\": \"2026-02-16T14:55:14.000Z\"\n  }\n]","timestamp":"2026-02-21 23:48:14"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": \"Beginner\",\n  \"fitness_goal\": \"Weight Loss\",\n  \"heart_rate\": 88,\n  \"current_speed\": \"7.50\"\n}","timestamp":"2026-02-21 23:48:14"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of 88 bpm, \nrunning at 7.50 km/h, and is a Beginner runner. \nThe user is currently focusing on Weight Loss. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-21 23:48:14"}
+{"level":"info","message":"stage 2 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 23:48:14"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"localhost\",\"user\":\"root\",\"password\":\"password\",\"database\":\"02test\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [\n  {\n    \"user_id\": 1,\n    \"user_name\": \"alice\",\n    \"password\": \"password123\",\n    \"name\": \"Alice Kim\",\n    \"exercise_level\": \"Beginner\",\n    \"fitness_goal\": \"Weight Loss\",\n    \"injuries\": \"Knee pain\",\n    \"created_at\": \"2026-02-16T14:55:14.000Z\"\n  }\n]","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": \"Beginner\",\n  \"fitness_goal\": \"Weight Loss\",\n  \"heart_rate\": 88,\n  \"current_speed\": \"7.50\"\n}","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of 88 bpm, \nrunning at 7.50 km/h, and is a Beginner runner. \nThe user is currently focusing on Weight Loss. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"✅ RAG Engine Ready","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"stage 3 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 23:53:44"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"localhost\",\"user\":\"root\",\"password\":\"password\",\"database\":\"02test\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: [\n  {\n    \"user_id\": 1,\n    \"user_name\": \"alice\",\n    \"password\": \"password123\",\n    \"name\": \"Alice Kim\",\n    \"exercise_level\": \"Beginner\",\n    \"fitness_goal\": \"Weight Loss\",\n    \"injuries\": \"Knee pain\",\n    \"created_at\": \"2026-02-16T14:55:14.000Z\"\n  }\n]","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": \"Beginner\",\n  \"fitness_goal\": \"Weight Loss\",\n  \"heart_rate\": 88,\n  \"current_speed\": \"7.50\"\n}","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of 88 bpm, \nrunning at 7.50 km/h, and is a Beginner runner. \nThe user is currently focusing on Weight Loss. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"[RAG] Connected to Chroma Server successfully.","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"[RAG] Engine initialized. Collection: running_advice","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"✅ RAG Engine Ready","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"stage 3 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 23:55:36"}
