@@ -67,3 +67,86 @@
 {"level":"info","message":"[RAG] Engine initialized. Collection: running_advice","timestamp":"2026-02-21 23:55:36"}
 {"level":"info","message":"✅ RAG Engine Ready","timestamp":"2026-02-21 23:55:36"}
 {"level":"info","message":"stage 3 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-21 23:55:36"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 17:18:26"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"\",\"user\":\"\",\"password\":\"\",\"database\":\"\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 17:18:26"}
+{"level":"error","message":"❌ Database connection failed: Access denied for user ''@'localhost' (using password: NO)","timestamp":"2026-02-23 17:18:26"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 17:18:45"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"\",\"user\":\"\",\"password\":\"\",\"database\":\"\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 17:18:45"}
+{"level":"error","message":"❌ Database connection failed: Access denied for user ''@'localhost' (using password: NO)","timestamp":"2026-02-23 17:18:45"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 17:56:27"}
+{"level":"error","message":"Error initializing RAG Engine:","timestamp":"2026-02-23 17:56:27"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 17:57:36"}
+{"level":"error","message":"Error initializing RAG Engine:","timestamp":"2026-02-23 17:57:36"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 18:51:28"}
+{"level":"error","message":"Error initializing RAG Engine:","timestamp":"2026-02-23 18:51:28"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 19:03:29"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 19:03:29"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 19:03:30"}
+{"level":"error","message":"Error initializing RAG Engine:","timestamp":"2026-02-23 19:03:30"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"[RAG] Connected to Chroma Server successfully.","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"[RAG] Engine initialized. Collection: running_advice","timestamp":"2026-02-23 19:07:13"}
+{"level":"error","message":"Error initializing RAG Engine:","timestamp":"2026-02-23 19:07:13"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"[RAG] Connected to Chroma Server successfully.","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"[RAG] Engine initialized. Collection: running_advice","timestamp":"2026-02-23 19:10:59"}
+{"level":"error","message":"Error initializing RAG Engine:","timestamp":"2026-02-23 19:10:59"}
+{"level":"info","message":"🔄 stage 1 - Initializing database connection...","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"Creating MySQL pool with config: {\"host\":\"127.0.0.1\",\"user\":\"root\",\"password\":\"coxvok-7giNto\",\"database\":\"fyp_coach\",\"port\":3306,\"connectionLimit\":10}","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"✅ Database connection pool initialized","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"✅ Database ready","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"stage: 1.5 - testing database connection and prompt builder...","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"UserRepository.findById: Queried for user_id=1, details: []","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"Fetched RAG data for user_id=1: {\n  \"excercise_level\": null,\n  \"fitness_goal\": null,\n  \"heart_rate\": null,\n  \"current_speed\": null\n}","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"Built RAG prompt for user_id=1: The user is a runner with a current heart rate of unknown bpm, \nrunning at unknown km/h, and is a unknown runner. \nThe user is currently focusing on unknown. \nBased on this information, provide concise and actionable running advice \nthat prioritizes safety and encourages the user to maintain a healthy pace.","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"🔄 stage 2 - Initializing RAG Engine...","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"[RAG] Connected to Chroma Server successfully.","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"[RAG] Engine initialized. Collection: running_advice","timestamp":"2026-02-23 19:17:50"}
+{"level":"info","message":"✅ RAG Engine Ready","timestamp":"2026-02-23 19:17:51"}
+{"level":"info","message":"stage 3 - 🚀 Server running on http://localhost:3000","timestamp":"2026-02-23 19:17:51"}

@@ -1,7 +1,7 @@
 // server/server.js
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 
 import logger from './src/utils/logger.js';
 import { db } from './src/database/index.js';
@@ -10,7 +10,6 @@ import { getLLMResponse } from './src/services/llm_client.js';
 
 import RagPromptBuilder from './src/services/prompts/builder.js';
 
-dotenv.config();
 
 // Use environment SERVER_PORT = 3000 with a safe default
 const PORT = process.env.SERVER_PORT || 3000;

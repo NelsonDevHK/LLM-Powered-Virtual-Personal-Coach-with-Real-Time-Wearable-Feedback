@@ -4,7 +4,6 @@
 //   node src/scripts/test_llm.js "Your question"  # one-shot
 
 const readline = require('readline');
-const dotenv = require('dotenv');
 
 // Load .env from project root if present
 dotenv.config();

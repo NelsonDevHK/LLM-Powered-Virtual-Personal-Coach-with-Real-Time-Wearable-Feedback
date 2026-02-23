@@ -12,33 +12,40 @@ class RAGEngine {
     this.isInitialized = false;
   }
 
-  async initialize() {
-    if (this.isInitialized) {
-      logger.info('RAG Engine already initialized.');
-      return;
-    }
-
-    try {
-      this.client = new ChromaClient({ path: config.CHROMA_HOST });
-
-      await this.client.heartbeat();
-      logger.info('[RAG] Connected to Chroma Server successfully.');
-
-      // get or create collection
-      this.collection = await this.client.getOrCreateCollection({
-        name: config.COLLECTION_NAME,
-        metadata: { "hnsw:space": "cosine" },  // Use cosine similarity for better Euclidean Distance search results
-      });
-
-      this.isInitialized = true;
-      logger.info(`[RAG] Engine initialized. Collection: ${config.COLLECTION_NAME}`);
-
-      await this.loadAndStoreAdvice();
-    } catch (err) {
-      logger.error('Error initializing RAG Engine:', err?.response?.data || err?.message || err);
-      throw new Error('Failed to initialize RAG Engine');
-    }
+async initialize() {
+  if (this.isInitialized) {
+    logger.info('RAG Engine already initialized.');
+    return;
   }
+
+  try {
+    // Create Chroma client BEFORE using it
+    this.client = new ChromaClient({
+      serverUrl: `http://${config.CHROMA_HOST}:${config.CHROMA_PORT}`,
+    });
+
+    await this.client.heartbeat();
+    logger.info('[RAG] Connected to Chroma Server successfully.');
+
+    // get or create collection
+    this.collection = await this.client.getOrCreateCollection({
+      name: config.COLLECTION_NAME,
+      metadata: { 'hnsw:space': 'cosine' },
+    });
+
+    this.isInitialized = true;
+    logger.info(`[RAG] Engine initialized. Collection: ${config.COLLECTION_NAME}`);
+
+    await this.loadAndStoreAdvice();
+  } catch (err) {
+  console.error('RAW RAG init error:', err);   // add this line
+  logger.error(
+    'Error initializing RAG Engine:',
+    err?.response?.data || err?.message || err
+  );
+  throw new Error('Failed to initialize RAG Engine');
+}
+}
 
   /**
    * Load json from DATA_PATH, generate embeddings, and store in ChromaDB

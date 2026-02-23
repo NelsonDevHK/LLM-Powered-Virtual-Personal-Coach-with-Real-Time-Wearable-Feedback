@@ -1,5 +1,4 @@
 import axios from 'axios';
-import 'dotenv/config';
 
 // Support both OLLAMA_URL (full) and OLLAMA_HOST (base) for flexibility
 const OLLAMA_BASE = process.env.OLLAMA_HOST || 'http://localhost:11434';
