@@ -21,7 +21,7 @@ function buildEndpoint(url) {
     // If the provided URL already points to an /api/... path, use it as-is
     // otherwise, append /api/chat (Ollama default)
         if (/\/api\//.test(url)) return url;
-        return `${String(url).replace(/\/$/, '')}/api/chat`;
+        return `${String(url).replace(/\/$/, '')}/api/generate`;
 }
 
 async function getLLMResponse(question) {

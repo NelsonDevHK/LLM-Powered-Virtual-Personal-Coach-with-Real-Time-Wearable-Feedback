@@ -1,5 +1,7 @@
 # Overview of llm service
 
+the backend will require the ollama server and chromadb server to start before using.
+
 ## How to run
 
 1. Chroma: for store and search embeddings. It can also apply metadata filtes to reuslt
@@ -7,6 +9,9 @@
 ```bash
 # start the chroma server running on localhost:8000.
 chroma run --path ./chroma_db --port 8000
+
+#shut down server if ctrl+c not working
+pkill -f chroma
 
 ```
     
@@ -22,9 +27,15 @@ ollama serve
 3. run server.js
 
 
-```bash
+```bash`
 cd server/
 node server.js
+
+
+# test
+curl http://localhost:3000/api/ragAdvice/1
+curl http://localhost:3000/api/fullLLM/1
+
 ```
 
 ### logic

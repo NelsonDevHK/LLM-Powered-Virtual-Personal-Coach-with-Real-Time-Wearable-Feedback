@@ -10,10 +10,16 @@ class ConversationRepository {
         */
     async findById(userId) {
         const query = `SELECT * FROM \`${TABLES.CONVERSATION_HISTORY}\` WHERE user_id = ?`;
-        const rows = await db.query(query, [conversationId]);
+        const rows = await db.query(query, [userId]);
         return rows[0] || null;
     }
 
+    async getConversationHistory(userId) {
+        const query = `SELECT session_summary FROM \`${TABLES.CONVERSATION_HISTORY}\` WHERE user_id = ? ORDER BY timestamp DESC LIMIT 1`;
+        const rows = await db.query(query, [userId]);
+        return rows[0]?.session_summary || null;
+    }
+    
     /**
      * Get all conversations
      * @returns {Promise<Array>}

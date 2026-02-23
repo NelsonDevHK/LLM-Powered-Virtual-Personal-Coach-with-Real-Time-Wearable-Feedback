@@ -9,7 +9,7 @@ class WearableRepository {
      * @param {number} userId 
      * @returns {Promise<Array>}
      */
-    async findByUserId(userId) {
+    async findById(userId) {
         const query = `SELECT * FROM \`${TABLES.WEARABLE_DATA}\` WHERE user_id = ?`;
         return await db.query(query, [userId]);
     }

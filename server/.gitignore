@@ -10,3 +10,4 @@
 
 # Node artifacts
 node_modules/
+logs/
