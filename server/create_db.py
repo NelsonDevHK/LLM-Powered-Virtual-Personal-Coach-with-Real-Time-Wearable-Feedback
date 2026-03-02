@@ -33,13 +33,15 @@ def create_database_schema():
         print("✅ Connected to MySQL server")
 
         # 1. Create database (using backticks for special name starting with digit)
+        # allow override via environment variable (e.g. DB_NAME=fyp_coach)
+        dbname = os.environ.get('DB_NAME', '02test')
         cursor.execute(
-            "CREATE DATABASE IF NOT EXISTS `02test` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            f"CREATE DATABASE IF NOT EXISTS `{dbname}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
         )
-        print("✅ Database '02test' created/verified")
+        print(f"✅ Database '{dbname}' created/verified")
 
         # 2. Switch to the new database
-        cursor.execute("USE `02test`")
+        cursor.execute(f"USE `{dbname}`")
 
         # 3. Create users table
         cursor.execute(
@@ -90,12 +92,9 @@ def create_database_schema():
 
         connection.commit()
         print("\n🎉 Database schema created successfully!")
-        print(
-            "💡 To use: Set environment variables DB_USER, DB_PASSWORD before running:"
-        )
-        print("   export DB_USER='your_username'")
-        print("   export DB_PASSWORD='your_password'")
-        print("   python3 src/database/create_db.py")
+        print("💡 To use: Set environment variables before running:")
+        print("   export DB_NAME=fyp_coach")
+        print("   python3 server/create_db.py")
 
     except Error as e:
         print(f"\n❌ MySQL Error: {e}")

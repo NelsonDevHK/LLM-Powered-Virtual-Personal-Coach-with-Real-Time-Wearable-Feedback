@@ -17,4 +17,28 @@
   text-align: center;
 }
 
+/* simple view container padding */
+.view-container {
+  margin-top: 120px; /* push below fixed navbar */
+  padding: 1rem;
+}
+
+.login-form {
+  margin-top: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.login-form input {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  width: 200px;
+}
+.login-form .buttons button {
+  margin: 0 0.5rem;
+}
+.message {
+  color: red;
+}
+
 
