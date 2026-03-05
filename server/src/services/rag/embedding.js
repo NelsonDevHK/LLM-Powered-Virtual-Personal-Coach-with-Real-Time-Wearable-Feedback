@@ -6,7 +6,6 @@ class OllamaEmbeddingService {
     this.model = config.OLLAMA_MODEL;
     // ensure the ollama client points to your host
     process.env.OLLAMA_HOST = config.OLLAMA_HOST;
-    console.log('[Embedding] Initialized with model:', this.model, '| host:', process.env.OLLAMA_HOST);
   }
 
   /**

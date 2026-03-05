@@ -1,7 +1,7 @@
 // src/services/rag.service.js
 import { queryRAG } from './rag/index.js';
 import { RagPromptBuilder } from './prompts/builder.js';
-import user_data from './user_data.js';
+import user_data from './db.service.js';
 import logger from '../utils/logger.js';
 
 class RagService {
@@ -22,7 +22,8 @@ class RagService {
     if (!advice || (Array.isArray(advice) && advice.length === 0)) {
       logger.warn(`RagService: No advice returned for user_id=${userId} with prompt: ${prompt}`);
     } else {
-      logger.info(`RagService: Received advice for user_id=${userId}: ${JSON.stringify(advice, null, 2)}`);
+      logger.info(`RagService: Received advice for user_id=${userId}`);
+      // ${JSON.stringify(advice, null, 2)} 
     }
 
     // 4. Return Pure Data

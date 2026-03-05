@@ -1,8 +1,4 @@
-// db.config.js (or wherever this lives)
-
-import mysql from 'mysql2/promise';
-
-// We assume .env is already loaded by server.js via `import 'dotenv/config';`
+import 'dotenv/config';
 
 export const databaseConfig = {
   host: process.env.DB_HOST || '',
@@ -14,7 +10,7 @@ export const databaseConfig = {
 };
 
 export const TABLES = {
-  USER: 'users',
-  WEARABLE_DATA: 'wearable_data',
-  CONVERSATION_HISTORY: 'conversation_history',
+  USER: process.env.TABLE_USER || 'users',
+  WEARABLE_DATA: process.env.TABLE_WEARABLE || 'wearable_data',
+  CONVERSATION_HISTORY: process.env.TABLE_CONVERSATION || 'conversation_history',
 };

@@ -1,10 +1,10 @@
-# Overview of llm service
+# Overview of Backend service
 
 the backend will require the ollama server and chromadb server to start before using.
 
 ## How to run
 
-1. Chroma: for store and search embeddings. It can also apply metadata filtes to reuslt
+### ***Chroma***: for store and search embeddings. 
 
 ```bash
 # start the chroma server running on localhost:8000.
@@ -15,7 +15,7 @@ pkill -f chroma
 
 ```
     
-2. ollama: Used for embedding and llm response
+### ***ollama***: Used for embedding and llm response
 
 
 ```bash
@@ -24,42 +24,57 @@ ollama serve
 
 ```
 
-3. run server.js
+### ***Backend Server*** : orchestration for llm response
 
+```bash
 
-```bash`
 cd server/
-node server.js
+node src/server.js
+
+```
 
 
-# test
-curl http://localhost:3000/api/ragAdvice/1
+
+## test
+
+```bash
+
+curl http://localhost:3000/api/ragAdvice/{userId}
+
 curl http://localhost:3000/api/fullLLM/1
 
 ```
 
-### logic
+## logic
+
 ### 2.1 user data services
+
+- it will call the repository. *repositories* will directly react with DB
+
+- user_data will gather the useful data from three tables and send the Dictionary for building prompts for llm and rag
+
 ### 2.2 rag services
 
-Business logic
-- Ingest: Read advice documents from `DATA_PATH` (see `src/config/rag_config.js`). For each document, compute an embedding using Ollama (`OLLAMA_EMBEDDING_MODEL`) and upsert into the Chroma collection (`CHROMA_COLLECTION`) with useful metadata (e.g., category, difficulty, tags).
-- Retrieve: For a user query + context (goal, pace, HR, injury flags), embed the query, run a similarity search (top‑k) in Chroma, and return documents with distances and metadata.
-- Filter & re‑rank: Apply metadata filters (e.g., `{difficulty: "beginner"}`) and optionally re‑rank results using domain scores (e.g., penalize advice that conflicts with user constraints).
-- Orchestration: `rag/index.js` wires together embedding (`rag/embedding.js`) and vector store operations (`rag/engine.js`) behind simple functions such as ingest and search.
+- ***embeddding***: 
 
-Key modules
-- `src/config/rag_config.js`: Centralized configuration (host, collection, embedding model, data path).
-- `src/services/rag/embedding.js`: Embedding helpers (batch/single text → float vector[] via Ollama).
-- `src/services/rag/engine.js`: Chroma collection lifecycle (getOrCreate, add/upsert, query, delete/reset).
-- `src/services/rag/index.js`: High‑level ingest/search entry points used by the server.
-- `src/services/rag/rag.js`: Optional RAG orchestration glue that prepares retrieval inputs for the LLM.
+- ***engine***:
 
+- query(arg, top_k):
 
 ### 2.3 llm services
 
-Business logic
-- Prompt building: Combine user telemetry (goal, HR, cadence, sleep), constraints (injury flags), and retrieved passages into a concise coaching prompt. Include system directives to keep responses short, actionable, and safe.
-- Generation: Call Ollama chat model (e.g., `llama3`, `mistral`) to produce guidance. Optionally stream tokens for better UX.
-- Post‑processing: Enforce length, simplify wording, and attach any citations or metadata from retrieval. Log usage for traceability.
-- Interfaces: `llm_client.js` abstracts Ollama REST (`/api/chat` or `/api/generate`). `user_data.js` fetches user context from DB to enrich prompts.
+- routes -> controller -> services -> llm_client
+
+- llm.service will be the main flow. calling other services, ie prompt buildier, query data, calling rag
+
+- will use /api/generate endpoint for the response. This is for real_time feedback only. 
+
+
+## future improvement
+
+1. the llm now only generate a real_time feedback We need a llm response for session summary
+    1.1 new prompt needed
+    1.2 need user_data for query data
+    1.3 need to check the content of db, may need to change in furture
+
+2. the real_time feedback will still store in db(coneversation_history), need to make a json for tempery storage

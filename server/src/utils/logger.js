@@ -15,9 +15,10 @@ const __dirname = path.dirname(__filename);
 // ---------------------------------------------------------
 const { combine, timestamp, printf, colorize } = winston.format;
 
-// Define a custom format for the logs
-const logFormat = printf(({ level, message, timestamp }) => {
-  return `${timestamp} [${level}]: ${message}`;
+// Define a custom format for the logs, including optional label
+const logFormat = printf(({ level, timestamp, label, message }) => {
+  const labelPart = label ? ` [${label}]` : '';
+  return `${timestamp}${labelPart} [${level}]: ${message}`;
 });
 
 // Create the logger instance
@@ -25,6 +26,13 @@ const logger = winston.createLogger({
   // Set the log level. 
   // You can change this via environment variable (e.g., LOG_LEVEL=debug)
   level: process.env.LOG_LEVEL || 'info', 
+
+  // Base format to attach metadata; transports can further customize format
+  format: combine(
+    winston.format.metadata({
+      fillExcept: ['message', 'level', 'timestamp', 'label'],
+    })
+  ),
   
   // Define where the logs go (Transports)
   transports: [

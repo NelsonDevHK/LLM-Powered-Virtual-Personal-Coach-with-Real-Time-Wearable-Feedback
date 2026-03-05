@@ -8,7 +8,7 @@ const readline = require('readline');
 // Load .env from project root if present
 dotenv.config();
 
-const { getLLMResponse } = require('../services/llm_client');
+const { getLLMResponse } = require('../src/services/llm_client');
 
 async function askOnce(prompt) {
   const res = await getLLMResponse(prompt);

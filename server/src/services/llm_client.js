@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../utils/logger.js';
 
 // Support both OLLAMA_URL (full) and OLLAMA_HOST (base) for flexibility
 const OLLAMA_BASE = process.env.OLLAMA_HOST || 'http://localhost:11434';
@@ -25,13 +26,14 @@ function buildEndpoint(url) {
 }
 
 async function getLLMResponse(question) {
-        const endpoint = buildEndpoint(OLLAMA_BASE);
-        const isGenerate = /\/api\/generate\/?$/.test(endpoint);
-        const messages = normalizeMessages(question);
-        const prompt = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
-        const payload = isGenerate
-            ? { model: MODEL_NAME, prompt, stream: false }
-            : { model: MODEL_NAME, messages, stream: false };
+    logger.info('sending question to link {OLLAMA_BASE} with model {MODEL_NAME}');
+    const endpoint = buildEndpoint(OLLAMA_BASE);
+    const isGenerate = /\/api\/generate\/?$/.test(endpoint);
+    const messages = normalizeMessages(question);
+    const prompt = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
+    const payload = isGenerate
+        ? { model: MODEL_NAME, prompt, stream: false }
+        : { model: MODEL_NAME, messages, stream: false };
 
     try {
         const response = await axios.post(endpoint, payload, {

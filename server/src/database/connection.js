@@ -17,7 +17,7 @@ class DatabaseConnection {
     }
 
     try {
-  logger.info(`Creating MySQL pool with config: ${JSON.stringify(databaseConfig)}`);
+      logger.info(`Creating MySQL pool with config: ${JSON.stringify(databaseConfig)}`);
         this.pool = mysql.createPool({
             host: databaseConfig.host,
             user: databaseConfig.user,

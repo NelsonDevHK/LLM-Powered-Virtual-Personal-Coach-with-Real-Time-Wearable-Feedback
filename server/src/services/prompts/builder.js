@@ -16,7 +16,8 @@ export class PromptBuilder {
  */
 export class RagPromptBuilder extends PromptBuilder {
     async builder(userDict) {
-        logger.info(`RagPromptBuilder.builder: Building prompt for user data: ${JSON.stringify(userDict, null, 2)}`);
+        //logger.info(`RagPromptBuilder.builder: Building prompt for user data: ${JSON.stringify(userDict, null, 2)}`);
+        logger.info(`RagPromptBuilder.builder: Building prompt for user.`);
         
         // Extract relevant data for RAG prompt from userDict
         const ragData = {

@@ -12,7 +12,7 @@ class UserRepository {
     const query = `SELECT * FROM \`${TABLES.USER}\` WHERE user_id = ?`;
     // connection.query returns an array of rows
     const rows = await db.query(query, [userId]);
-    logger.info(`UserRepository.findById: Queried for user_id=${userId}, details: ${JSON.stringify(rows, null, 2)}`);
+    //logger.info(`UserRepository.findById: Queried for user_id=${userId}, details: ${JSON.stringify(rows, null, 2)}`);
     return rows[0] || null;
     }
 

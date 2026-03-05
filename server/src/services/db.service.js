@@ -1,7 +1,7 @@
 import { userRepository, wearableRepository, conversationRepository } from "../database/index.js";
 import logger from '../utils/logger.js';
 
-export class UserDataService {
+export class dbService {
 
     async getRagData(userId) {
         try {
@@ -59,6 +59,28 @@ export class UserDataService {
             throw error;
         }
     }
+
+    async saveChatMessage(userId, conversationData) {
+        try {
+            // Save the conversation data to the database
+            await conversationRepository.saveChatMessage(userId, conversationData);
+            logger.info(`Saved conversation data for user_id=${userId}`);
+        } catch (error) {
+            logger.error("Error saving conversation data:", error);
+            throw error;
+        }
+    }
+
+    async saveSessionSummary(userId, sessionSummary) {
+        try {
+            // Save the session summary to the database
+            await conversationRepository.saveSessionSummary(userId, sessionSummary);
+            logger.info(`Saved session summary for user_id=${userId}`);
+        } catch (error) {
+            logger.error("Error saving session summary:", error);
+            throw error;
+        }
+    }
 }
 
-export default new UserDataService();
+export default new dbService();

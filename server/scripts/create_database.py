@@ -60,20 +60,48 @@ def create_database_schema():
         )
         print("✅ Table 'users' created")
 
-        # 4. Create conversation_history table with foreign key
+        # # 4. Create conversation_history table with foreign key
+        # cursor.execute(
+        #     """
+        #     CREATE TABLE IF NOT EXISTS conversation_history (
+        #         message_id INT AUTO_INCREMENT PRIMARY KEY,
+        #         user_id INT NOT NULL,
+        #         role ENUM('user', 'assistant') NOT NULL,
+        #         session_summary TEXT NOT NULL,
+        #         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        #         FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE
+        #     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        # """
+        # )
+        # 4. Create chat table with foreign key
         cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS conversation_history (
+            CREATE TABLE chat_logs (
                 message_id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
-                role ENUM('user', 'assistant') NOT NULL,
-                session_summary TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE
+                content JSON NOT NULL,  -- 存 { "text": "...", "timestamp": "..." }
+                FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX (user_id, created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         """
         )
-        print("✅ Table 'conversation_history' created")
+        print("✅ Table 'chat_logs' created")
+
+        cursor.execute(
+            """
+            CREATE TABLE session_summaries (
+                summary_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                summary_data JSON NOT NULL, -- 存 LLM 生成嘅結構化 JSON
+                session_start_at TIMESTAMP,
+                session_end_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE,
+                INDEX (user_id, session_end_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """
+        )
+        print("✅ Table 'session_summaries' created")
 
         # 5. Create wearable_data table with foreign key
         cursor.execute(
