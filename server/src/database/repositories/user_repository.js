@@ -26,6 +26,17 @@ class UserRepository {
     }
 
     /**
+     * Find a user by username (used for authentication)
+     * @param {string} userName
+     * @returns {Promise<Object|null>}
+     */
+    async findByUsername(userName) {
+        const query = `SELECT * FROM \`${TABLES.USER}\` WHERE user_name = ?`;
+        const rows = await db.query(query, [userName]);
+        return rows[0] || null;
+    }
+
+    /**
      * Get table schema
      * @param {string} tableName 
      * @returns {Promise<Array>}
