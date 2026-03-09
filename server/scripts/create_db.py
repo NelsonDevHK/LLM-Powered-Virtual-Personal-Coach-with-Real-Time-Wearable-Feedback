@@ -34,7 +34,7 @@ def create_database_schema():
 
         # 1. Create database (using backticks for special name starting with digit)
         # allow override via environment variable (e.g. DB_NAME=fyp_coach)
-        dbname = os.environ.get('DB_NAME', '02test')
+        dbname = os.environ.get("DB_NAME", "02test")
         cursor.execute(
             f"CREATE DATABASE IF NOT EXISTS `{dbname}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
         )
@@ -51,6 +51,7 @@ def create_database_schema():
                 user_name VARCHAR(100) NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 name VARCHAR(100) NOT NULL,
+                age INT NOT NULL,
                 exercise_level VARCHAR(50) NOT NULL,
                 fitness_goal VARCHAR(50) NOT NULL,
                 injuries TEXT,
@@ -64,7 +65,7 @@ def create_database_schema():
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS conversation_history (
-                message_id INT AUTO_INCREMENT PRIMARY KEY,
+                summary_id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 role ENUM('user', 'assistant') NOT NULL,
                 session_summary TEXT NOT NULL,
@@ -89,6 +90,22 @@ def create_database_schema():
         """
         )
         print("✅ Table 'wearable_data' created")
+
+        # 6. Create chat_logs table with foreign key
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_logs (
+                log_id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                role ENUM('user', 'assistant'),
+                content JSON NOT NULL,  -- 存 { "text": "...", "timestamp": "..." }
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES `users`(user_id) ON DELETE CASCADE,
+                INDEX (user_id, created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        """
+        )
+        print("✅ Table 'chat_logs' created")
 
         connection.commit()
         print("\n🎉 Database schema created successfully!")
