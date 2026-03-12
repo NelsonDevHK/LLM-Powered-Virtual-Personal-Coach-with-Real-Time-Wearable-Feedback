@@ -2,3 +2,4 @@
 
 /server/node_modules
 server/logs/chroma_db/
+chroma_db/
