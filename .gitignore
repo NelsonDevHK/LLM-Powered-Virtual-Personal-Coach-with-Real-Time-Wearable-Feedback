@@ -1,4 +1,4 @@
 .env
 
 /server/node_modules
-server/logs/
+server/logs/chroma_db/
