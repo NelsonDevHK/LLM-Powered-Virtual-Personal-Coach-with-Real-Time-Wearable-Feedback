@@ -1,4 +1,4 @@
-// src/app.js
+import wearableRepository from './database/repositories/wearable_repository.js';
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -13,6 +13,19 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+
+
+// Get all wearable data for a user
+app.get('/api/wearable/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const data = await wearableRepository.findById(userId);
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // Health Check
 app.get('/api/health', async (req, res, next) => {

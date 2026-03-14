@@ -11,3 +11,4 @@ server/chroma/*.sqlite3
 server/chroma/*/
 server/chroma/*/*.bin
 server/chroma/*/data_level*
+node_modules/

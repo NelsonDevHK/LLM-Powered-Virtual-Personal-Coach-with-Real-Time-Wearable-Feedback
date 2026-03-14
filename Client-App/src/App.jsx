@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Login from './components/Login.jsx';
 import Navbar from './components/Navbar.jsx';
 import Dashboard from './components/Dashboard.jsx';
-import WearableView from './components/WearableView.jsx';
+import Report from './components/Report.jsx';
 import Conversation from './components/Conversation.jsx';
 import { getToken, clearToken } from './api/auth.js';
 
@@ -40,7 +40,7 @@ function App() {
       </div>
       <div className="view-container">
         {currentView === 'dashboard' && <Dashboard />}
-        {currentView === 'wearable' && <WearableView />}
+        {currentView === 'report' && <Report />}
         {currentView === 'conversation' && <Conversation />}
       </div>
     </>

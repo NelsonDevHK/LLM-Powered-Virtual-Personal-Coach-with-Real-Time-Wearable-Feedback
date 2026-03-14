@@ -69,11 +69,17 @@ export default function Login({ onSuccess }) {
             value={age}
             onChange={e => setAge(e.target.value)}
           />
-          <input
-            placeholder="exercise level"
+          <select
             value={exerciseLevel}
             onChange={e => setExerciseLevel(e.target.value)}
-          />
+            style={{ width: '100%', margin: '0.5rem 0', padding: '0.7rem 1rem', borderRadius: 6, border: '1px solid #444', background: '#232334', color: '#E6E6E6', fontSize: '1rem' }}
+          >
+            <option value="">Select exercise level</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+            <option value="Athlete">Athlete</option>
+          </select>
           <input
             placeholder="fitness goal"
             value={fitnessGoal}
