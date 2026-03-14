@@ -184,3 +184,13 @@ NODE_ENV=production node server.js
 The API will listen on `SERVER_PORT` (default 3000) and will no longer
 watch or hot‑reload.
 
+
+
+cd /Users/virtuosokuen/Documents/HKUST/Fall26/server
+chroma run --path ./chroma_db --port 8000
+
+ollama serve
+
+node server.js
+
+npm start
