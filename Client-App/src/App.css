@@ -1,44 +1,166 @@
-#root {
+
+
+body, #root {
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Fira Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+  background: linear-gradient(135deg, #232334 0%, #292A2B 60%, #1F1F24 100%);
   text-align: center;
+  transition: background 0.3s;
+  box-sizing: border-box;
 }
 
-.Navbar {
+.Navbar, .navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  padding: 1rem 0;          /* vertical padding only */
-  background-color: #10332D;
-  color: beige;
-
+  padding: 1rem 2vw 0.7rem 2vw;
+  background: #1F1F24cc;
+  color: #E6E6E6;
   display: flex;
-  justify-content: center;  /* center horizontally */
-  align-items: center;      /* center vertically */
-  text-align: center;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  box-shadow: 0 2px 8px #000a;
+  backdrop-filter: blur(2px);
+  min-height: 56px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+.navbar .nav-group {
+  display: flex;
+  gap: 1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.navbar .logout-btn {
+  background: #FFB86C;
+  color: #222;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex: 0 0 auto;
+  margin-left: 1rem;
+  white-space: nowrap;
+  align-self: center;
+  max-width: 90vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.navbar .logout-btn:hover {
+  background: #FF79C6;
+  color: #fff;
 }
 
-/* simple view container padding */
+.app-title {
+  margin-top: 110px;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  font-weight: bold;
+  letter-spacing: 0.01em;
+  color: #FFB86C;
+  text-shadow: 0 2px 8px #000a;
+}
+
 .view-container {
-  margin-top: 120px; /* push below fixed navbar */
-  padding: 1rem;
+  margin-top: 0;
+  padding: 2vw;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .login-form {
   margin-top: 120px;
+  background: #232334;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px #000a;
+  padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .login-form input {
   margin: 0.5rem 0;
-  padding: 0.5rem;
-  width: 200px;
+  padding: 0.7rem 1rem;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #232334;
+  color: #E6E6E6;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+.login-form input:focus {
+  border: 1.5px solid #FFB86C;
+  outline: none;
+}
+.login-form .buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 .login-form .buttons button {
-  margin: 0 0.5rem;
+  background: #44475A;
+  color: #E6E6E6;
+  border: none;
+  border-radius: 4px;
+  padding: 0.6rem 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.login-form .buttons button:hover {
+  background: #FFB86C;
+  color: #232334;
 }
 .message {
-  color: red;
+  color: #FF79C6;
+  margin-top: 1rem;
+}
+
+@media (max-width: 600px) {
+  .Navbar, .navbar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0.7rem 1vw 0.5rem 1vw;
+    font-size: 1rem;
+    min-height: 56px;
+    box-sizing: border-box;
+    overflow-x: auto;
+  }
+  .navbar .nav-group {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    margin-bottom: 0.5rem;
+  }
+  .navbar .logout-btn {
+    margin-left: 0;
+    margin-top: 0.5rem;
+    align-self: flex-end;
+    max-width: 95vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app-title {
+    margin-top: 80px;
+    font-size: 1.05rem;
+  }
+  .view-container {
+    padding: 1vw;
+  }
+  .login-form {
+    padding: 1.2rem 0.5rem;
+    max-width: 98vw;
+  }
 }
 
 

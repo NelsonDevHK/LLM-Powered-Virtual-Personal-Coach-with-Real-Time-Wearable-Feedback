@@ -26,8 +26,6 @@ function App() {
 
   return (
     <>
-      <div className="Navbar">LLM-Powered-Virtual-Personal-Coach-with-Real-Time-Wearable-Feedback</div>
-      <p>API status: {status}</p>
       <Navbar
         currentView={currentView}
         onChangeView={setCurrentView}
@@ -36,6 +34,10 @@ function App() {
           setToken(null);
         }}
       />
+      <div className="app-title">
+        LLM-Powered-Virtual-Personal-Coach-with-Real-Time-Wearable-Feedback
+        <span style={{fontWeight:400, fontSize:'0.9rem', marginLeft:12, color:'#FFB86C'}}>API status: {status}</span>
+      </div>
       <div className="view-container">
         {currentView === 'dashboard' && <Dashboard />}
         {currentView === 'wearable' && <WearableView />}
