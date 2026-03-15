@@ -1,14 +1,14 @@
 import { authenticateJWT } from './middleware/authenticateJWT.js';
 import { getGroupedUserData } from './services/grouped_user_data.js';
 import ragService from './services/rag.service.js';
-import wearableRepository from './database/repositories/wearable_repository.js';
+import dbService from './services/db.service.js';
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import routes from './routes/index.js';
 import logger from './utils/logger.js';
-import { db, userRepository } from './database/index.js';
+import { db } from './database/index.js';
 import { getLLMResponse } from './services/llm_client.js';
 
 const app = express();
@@ -23,7 +23,7 @@ app.use(express.json());
 app.get('/api/wearable/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const data = await wearableRepository.findById(userId);
+    const data = await dbService.findWearableByUserId(userId);
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -51,7 +51,7 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'user_name and password required' });
     }
 
-    const existing = await userRepository.findByUsername(user_name);
+    const existing = await dbService.findUserByUsername(user_name);
     if (existing) {
       return res.status(409).json({ error: 'username already taken' });
     }
@@ -76,7 +76,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'user_name and password required' });
     }
 
-    const user = await userRepository.findByUsername(user_name);
+    const user = await dbService.findUserByUsername(user_name);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -112,7 +112,11 @@ app.post('/api/ask', authenticateJWT, async (req, res) => {
     // Fetch grouped user data
     const grouped = await getGroupedUserData(user_id);
 
-    // Query RAG for relevant advice, passing groupedUserData for context-aware retrieval
+    // Fetch conversation history for this user
+    const conversationHistory = await dbService.getConversationHistory(user_id);
+    grouped.conversation_history = conversationHistory || [];
+
+    // Query RAG for relevant advice, passing groupedUserData (with history) for context-aware retrieval
     const userMsg = Array.isArray(messages) && messages.length > 0
       ? messages[messages.length - 1].content
       : (question || '');
@@ -133,6 +137,14 @@ app.post('/api/ask', authenticateJWT, async (req, res) => {
     }
     logger.info('LLM input context:', JSON.stringify(input, null, 2));
     const result = await getLLMResponse(input);
+
+    // Save the conversation message to history
+    await dbService.saveChatMessage(user_id, {
+      question: question || userMsg,
+      answer: result,
+      timestamp: new Date().toISOString(),
+    });
+
     return res.json({ result });
   } catch (err) {
     logger.error('Ask route error:', err?.response?.data || err?.message || err);

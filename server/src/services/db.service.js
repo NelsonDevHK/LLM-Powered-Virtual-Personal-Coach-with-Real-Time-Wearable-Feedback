@@ -81,6 +81,33 @@ export class dbService {
             throw error;
         }
     }
+    async findUserByUsername(user_name) { // For register Helper function
+        try {
+            return await userRepository.findByUsername(user_name);
+        } catch (error) {
+            logger.error("Error finding user by username:", error);
+            throw error;
+        }
+    }
+
+    async findWearableByUserId(userId) { // For fetching data endpoint
+        try {
+            return await wearableRepository.findById(userId);
+        } catch (error) {
+            logger.error("Error finding wearable by userId:", error);
+            throw error;
+        }
+    }
+    async getConversationHistory(userId) {
+        try {
+            const history = await conversationRepository.findById(userId);
+            // Return session_summary or an array of messages, depending on your schema
+            return history?.session_summary ?? [];
+        } catch (error) {
+            logger.error("Error fetching conversation history:", error);
+            return [];
+        }
+    }
 }
 
 export default new dbService();

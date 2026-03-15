@@ -1,3 +1,5 @@
+# Ignore Garmin Connect integration for separate testing
+server/GerminConnect/
 .env
 
 /server/node_modules
