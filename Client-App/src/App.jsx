@@ -4,7 +4,7 @@ import Login from './components/Login.jsx';
 import Navbar from './components/Navbar.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import Report from './components/Report.jsx';
-import Conversation from './components/Conversation.jsx';
+import ChatBox from './components/ChatBox.jsx';
 import { getToken, clearToken } from './api/auth.js';
 
 function App() {
@@ -36,13 +36,15 @@ function App() {
       />
       <div className="app-title">
         LLM-Powered-Virtual-Personal-Coach-with-Real-Time-Wearable-Feedback
-        <span style={{fontWeight:400, fontSize:'0.9rem', marginLeft:12, color:'#FFB86C'}}>API status: {status}</span>
       </div>
       <div className="view-container">
         {currentView === 'dashboard' && <Dashboard />}
         {currentView === 'report' && <Report />}
-        {currentView === 'conversation' && <Conversation />}
       </div>
+      <ChatBox onSend={async (msg) => {
+        // Placeholder: Replace with LLM API call
+        return 'LLM reply: ' + msg;
+      }} />
     </>
   );
 }
