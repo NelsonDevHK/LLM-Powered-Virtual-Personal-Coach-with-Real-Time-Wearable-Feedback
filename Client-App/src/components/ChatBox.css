@@ -1,3 +1,26 @@
+.chatbox-message.llm.loading {
+  background: transparent;
+  box-shadow: none;
+  color: #aaa;
+  font-style: italic;
+  align-self: flex-start;
+  padding: 0.4rem 0.7rem;
+}
+
+.chatbox-loading-bubble {
+  font-size: 1.2em;
+  letter-spacing: 0.2em;
+  animation: chat-bounce 1.2s infinite linear;
+}
+
+@keyframes chat-bounce {
+  0% { opacity: 0.2; }
+  20% { opacity: 1; }
+  40% { opacity: 0.2; }
+  60% { opacity: 1; }
+  80% { opacity: 0.2; }
+  100% { opacity: 0.2; }
+}
 .chatbox-container {
   position: fixed;
   bottom: 24px;

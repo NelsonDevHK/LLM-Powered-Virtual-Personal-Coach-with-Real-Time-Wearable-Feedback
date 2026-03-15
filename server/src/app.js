@@ -1,3 +1,6 @@
+import { authenticateJWT } from './middleware/authenticateJWT.js';
+import { getGroupedUserData } from './services/grouped_user_data.js';
+import ragService from './services/rag.service.js';
 import wearableRepository from './database/repositories/wearable_repository.js';
 import express from 'express';
 import cors from 'cors';
@@ -43,7 +46,7 @@ app.get('/api/health', async (req, res, next) => {
 
 app.post('/api/register', async (req, res) => {
   try {
-    const { user_name, password, name, gender, exercise_level, fitness_goal, injuries } = req.body || {};
+    const { user_name, password, name, age, gender, exercise_level, fitness_goal, injuries } = req.body || {};
     if (!user_name || !password) {
       return res.status(400).json({ error: 'user_name and password required' });
     }
@@ -55,8 +58,8 @@ app.post('/api/register', async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const result = await db.query(
-      'INSERT INTO users (user_name,password,name,gender,exercise_level,fitness_goal,injuries) VALUES (?,?,?,?,?,?,?)',
-      [user_name, hashed, name || '', gender || '', exercise_level || '', fitness_goal || '', injuries || '']
+      'INSERT INTO users (user_name,password,name,age,gender,exercise_level,fitness_goal,injuries) VALUES (?,?,?,?,?,?,?,?)',
+      [user_name, hashed, name || '', age || null, gender || '', exercise_level || '', fitness_goal || '', injuries || '']
     );
 
     return res.json({ success: true, user_id: result.insertId });
@@ -97,14 +100,38 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.post('/api/ask', async (req, res) => {
+app.post('/api/ask', authenticateJWT, async (req, res) => {
   try {
     const { question, messages } = req.body || {};
     if (!question && !messages) {
       return res.status(400).json({ error: 'Missing "question" (string) or "messages" (array).' });
     }
 
-    const input = messages ?? question;
+    // Get user_id from JWT
+    const user_id = req.user.user_id;
+    // Fetch grouped user data
+    const grouped = await getGroupedUserData(user_id);
+
+    // Query RAG for relevant advice, passing groupedUserData for context-aware retrieval
+    const userMsg = Array.isArray(messages) && messages.length > 0
+      ? messages[messages.length - 1].content
+      : (question || '');
+    const ragAdviceArr = await ragService.getAdviceContent(user_id, grouped);
+    const ragAdvice = ragAdviceArr && ragAdviceArr.length > 0 ? ragAdviceArr.join('\n') : '';
+
+    // Format context for LLM
+    const context = `User: ${grouped.gender}, Age group: ${grouped.age_group}, Level: ${grouped.exercise_level}, Wearable: ${JSON.stringify(grouped.wearable_data)}\nRelevant advice: ${ragAdvice}`;
+    // Prepend context to prompt/messages
+    let input;
+    if (Array.isArray(messages)) {
+      input = [
+        { role: 'system', content: context },
+        ...messages
+      ];
+    } else {
+      input = `${context}\n${question}`;
+    }
+    logger.info('LLM input context:', JSON.stringify(input, null, 2));
     const result = await getLLMResponse(input);
     return res.json({ result });
   } catch (err) {
@@ -112,6 +139,20 @@ app.post('/api/ask', async (req, res) => {
     return res.status(500).json({ error: err?.message || 'Unknown error' });
   }
 });
+
+
+// Get grouped user and wearable data for a user (testing endpoint)
+app.get('/api/grouped-user-data/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const grouped = await getGroupedUserData(userId);
+    res.json({ success: true, data: grouped });
+  } catch (err) {
+    logger.error('Grouped user data error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 // Routes
 app.use('/api', routes);

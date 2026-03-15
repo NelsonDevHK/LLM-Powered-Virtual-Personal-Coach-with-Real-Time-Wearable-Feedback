@@ -5,25 +5,29 @@ import user_data from './db.service.js';
 import logger from '../utils/logger.js';
 
 class RagService {
-  async getAdvice(userId) {
+  async getAdvice(userId, groupedUserData = null) {
     logger.info(`RagService: Processing advice for user_id=${userId}`);
-    
+
     // 1. Get Data
-    const userDict = await user_data.getRagData(userId);
-    
+    let userDict;
+    if (groupedUserData) {
+      userDict = groupedUserData;
+    } else {
+      userDict = await user_data.getRagData(userId);
+    }
+
     // 2. Build Prompt
     const promptBuilder = new RagPromptBuilder();
     const prompt = await promptBuilder.builder(userDict);
-    
+
     // 3. Query RAG
     const advice = await queryRAG(prompt);
-    
+
     //debug log
     if (!advice || (Array.isArray(advice) && advice.length === 0)) {
       logger.warn(`RagService: No advice returned for user_id=${userId} with prompt: ${prompt}`);
     } else {
       logger.info(`RagService: Received advice for user_id=${userId}`);
-      // ${JSON.stringify(advice, null, 2)} 
     }
 
     // 4. Return Pure Data
@@ -31,8 +35,8 @@ class RagService {
   }
 
   // 給 LLM Service 用的內部方法，只返回內容列表
-  async getAdviceContent(userId) {
-    const { advice } = await this.getAdvice(userId);
+  async getAdviceContent(userId, groupedUserData = null) {
+    const { advice } = await this.getAdvice(userId, groupedUserData);
     return Array.isArray(advice) ? advice.map(item => item.content) : [];
   }
 }
