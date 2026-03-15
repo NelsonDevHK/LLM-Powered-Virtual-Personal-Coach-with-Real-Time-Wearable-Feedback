@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { login, register, setToken } from '../api/auth';
 
@@ -8,6 +7,7 @@ export default function Login({ onSuccess }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
   const [exerciseLevel, setExerciseLevel] = useState('');
   const [fitnessGoal, setFitnessGoal] = useState('');
   const [injuries, setInjuries] = useState('');
@@ -28,6 +28,7 @@ export default function Login({ onSuccess }) {
       user_name: userName,
       password,
       name,
+      gender,
       age,
       exercise_level: exerciseLevel,
       fitness_goal: fitnessGoal,
@@ -63,6 +64,15 @@ export default function Login({ onSuccess }) {
             value={name}
             onChange={e => setName(e.target.value)}
           />
+          <select
+            className="login-select"
+            value={gender}
+            onChange={e => setGender(e.target.value)}
+          >
+            <option value="">Select gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
           <input
             placeholder="age"
             type="number"
@@ -70,9 +80,9 @@ export default function Login({ onSuccess }) {
             onChange={e => setAge(e.target.value)}
           />
           <select
+            className="login-select"
             value={exerciseLevel}
             onChange={e => setExerciseLevel(e.target.value)}
-            style={{ width: '100%', margin: '0.5rem 0', padding: '0.7rem 1rem', borderRadius: 6, border: '1px solid #444', background: '#232334', color: '#E6E6E6', fontSize: '1rem' }}
           >
             <option value="">Select exercise level</option>
             <option value="Beginner">Beginner</option>

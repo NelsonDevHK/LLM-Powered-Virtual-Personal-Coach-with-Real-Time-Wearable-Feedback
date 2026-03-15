@@ -43,7 +43,7 @@ app.get('/api/health', async (req, res, next) => {
 
 app.post('/api/register', async (req, res) => {
   try {
-    const { user_name, password, name, exercise_level, fitness_goal, injuries } = req.body || {};
+    const { user_name, password, name, gender, exercise_level, fitness_goal, injuries } = req.body || {};
     if (!user_name || !password) {
       return res.status(400).json({ error: 'user_name and password required' });
     }
@@ -55,8 +55,8 @@ app.post('/api/register', async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const result = await db.query(
-      'INSERT INTO users (user_name,password,name,exercise_level,fitness_goal,injuries) VALUES (?,?,?,?,?,?)',
-      [user_name, hashed, name || '', exercise_level || '', fitness_goal || '', injuries || '']
+      'INSERT INTO users (user_name,password,name,gender,exercise_level,fitness_goal,injuries) VALUES (?,?,?,?,?,?,?)',
+      [user_name, hashed, name || '', gender || '', exercise_level || '', fitness_goal || '', injuries || '']
     );
 
     return res.json({ success: true, user_id: result.insertId });

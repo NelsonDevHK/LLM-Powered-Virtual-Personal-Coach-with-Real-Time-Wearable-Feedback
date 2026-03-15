@@ -1,3 +1,18 @@
+.login-form select.login-select {
+  margin: 0.5rem 0;
+  padding: 0.7rem 1rem;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #232334;
+  color: #E6E6E6;
+  font-size: 1rem;
+  transition: border 0.2s;
+}
+.login-form select.login-select:focus {
+  border: 1.5px solid #FFB86C;
+  outline: none;
+}
 
 
 body, #root {
