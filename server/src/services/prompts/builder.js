@@ -18,7 +18,7 @@ export class PromptBuilder {
 export class RagPromptBuilder extends PromptBuilder {
     async builder(userDict) {
         logger.info(`RagPromptBuilder.builder: Building prompt for user data: ${JSON.stringify(userDict, null, 2)}`);
-        // Use summarizeWearableData utility for wearable summary
+        // Summarize wearable data
         let wearableSummary = '';
         if (Array.isArray(userDict.wearable_data)) {
             wearableSummary = summarizeWearableData(userDict.wearable_data);
@@ -26,14 +26,18 @@ export class RagPromptBuilder extends PromptBuilder {
             wearableSummary = summarizeWearableData([userDict.wearable_data]);
         }
 
-        let prompt = RAG_TEMPLATE
-            .replace(/\{excercise_level\}/g, userDict.excercise_level ?? userDict.exercise_level ?? "unknown")
-            .replace(/\{fitness_goal\}/g, userDict.fitness_goal ?? "unknown")
-            .replace(/\{heart_rate\}/g, String(userDict.heart_rate ?? (userDict.wearable_data?.heart_rate ?? "unknown")))
-            .replace(/\{current_speed\}/g, String(userDict.current_speed ?? userDict.wearable_data?.current_speed ?? userDict.wearable_data?.speed ?? "unknown"));
-        if (userDict.gender) prompt += `\nGender: ${userDict.gender}`;
-        if (userDict.age_group) prompt += `\nAge group: ${userDict.age_group}`;
-        if (wearableSummary) prompt += `\nWearable summary: ${wearableSummary}`;
+        // Format conversation history (last 5 messages)
+        let history = '';
+        if (Array.isArray(userDict.conversation_history) && userDict.conversation_history.length > 0) {
+            const lastMsgs = userDict.conversation_history.slice(-5);
+            history = lastMsgs.map((msg, i) => `#${i+1}: Q: ${msg.question}\nA: ${msg.answer}`).join('\n');
+        } else {
+            history = 'No conversation history.';
+        }
+
+        // Explicit, instructional prompt
+        let prompt = `User Profile:\n- Gender: ${userDict.gender 
+            ?? 'unknown'}\n- Age group: ${userDict.age_group ?? 'unknown'}\n- Exercise level: ${userDict.excercise_level ?? userDict.exercise_level ?? 'unknown'}\n\nWorkout Summary:\n- ${wearableSummary || 'No recent workout data.'}\n\nConversation History:\n${history}\n\nInstructions:\nProvide running advice that is specific to this user’s profile and workout data. Reference the user’s age group, gender, and exercise level. Do not give generic advice—make your answer actionable and personalized.`;
         return prompt;
     }
 }

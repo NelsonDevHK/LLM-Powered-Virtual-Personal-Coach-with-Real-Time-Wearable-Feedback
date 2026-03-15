@@ -139,11 +139,22 @@ app.post('/api/ask', authenticateJWT, async (req, res) => {
     const result = await getLLMResponse(input);
 
     // Save the conversation message to history
-    await dbService.saveChatMessage(user_id, {
-      question: question || userMsg,
-      answer: result,
-      timestamp: new Date().toISOString(),
-    });
+    // Save user message
+    if (question || userMsg) {
+      await dbService.saveChatMessage(user_id, {
+        session_summary: question || userMsg,
+        role: 'user',
+        timestamp: new Date().toISOString(),
+      });
+    }
+    // Save assistant (LLM) response
+    if (result) {
+      await dbService.saveChatMessage(user_id, {
+        session_summary: result,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     return res.json({ result });
   } catch (err) {
