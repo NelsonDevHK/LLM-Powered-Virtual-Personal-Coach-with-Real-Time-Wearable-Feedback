@@ -1,0 +1,45 @@
+mysql -u root -p -e "USE fyp_coach; SHOW TABLES; 
+SHOW COLUMNS FROM users;
+SHOW COLUMNS FROM conversation_history;
+SHOW COLUMNS FROM wearable_data;
+
+
++----------------------+
+| Tables_in_fyp_coach  |
++----------------------+
+| conversation_history |
+| users                |
+| wearable_data        |
++----------------------+
++----------------+--------------+------+-----+-------------------+-------------------+
+| Field          | Type         | Null | Key | Default           | Extra             |
++----------------+--------------+------+-----+-------------------+-------------------+
+| user_id        | int          | NO   | PRI | NULL              | auto_increment    |
+| user_name      | varchar(100) | NO   |     | NULL              |                   |
+| password       | varchar(255) | NO   |     | NULL              |                   |
+| name           | varchar(100) | NO   |     | NULL              |                   |
+| age            | int          | YES  |     | NULL              |                   |
+| gender         | varchar(16)  | YES  |     | NULL              |                   |
+| exercise_level | varchar(50)  | NO   |     | NULL              |                   |
+| fitness_goal   | varchar(50)  | NO   |     | NULL              |                   |
+| injuries       | text         | YES  |     | NULL              |                   |
+| created_at     | datetime     | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
++----------------+--------------+------+-----+-------------------+-------------------+
++-----------------+--------------------------+------+-----+-------------------+-------------------+
+| Field           | Type                     | Null | Key | Default           | Extra             |
++-----------------+--------------------------+------+-----+-------------------+-------------------+
+| message_id      | int                      | NO   | PRI | NULL              | auto_increment    |
+| user_id         | int                      | NO   | MUL | NULL              |                   |
+| role            | enum('user','assistant') | NO   |     | NULL              |                   |
+| session_summary | text                     | NO   |     | NULL              |                   |
+| created_at      | datetime                 | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
++-----------------+--------------------------+------+-----+-------------------+-------------------+
++---------------+--------------+------+-----+-------------------+-------------------+
+| Field         | Type         | Null | Key | Default           | Extra             |
++---------------+--------------+------+-----+-------------------+-------------------+
+| data_id       | int          | NO   | PRI | NULL              | auto_increment    |
+| user_id       | int          | NO   | MUL | NULL              |                   |
+| heart_rate    | int          | NO   |     | NULL              |                   |
+| current_speed | decimal(5,2) | NO   |     | NULL              |                   |
+| recorded_at   | datetime     | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
++---------------+--------------+------+-----+-------------------+-------------------+
