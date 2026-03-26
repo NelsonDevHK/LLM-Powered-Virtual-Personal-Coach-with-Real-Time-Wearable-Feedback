@@ -1,0 +1,35 @@
+# Xcode
+xcuserdata/
+*.xcuserdatad/
+*.xcscmblueprint
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+*.xcsettings
+*.xccheckout
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Build
+build/
+
+# SwiftPM
+.swiftpm/
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+# Other
+*.swp
+*.swo
