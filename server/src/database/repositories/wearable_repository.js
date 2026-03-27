@@ -15,6 +15,31 @@ class WearableRepository {
     }
 
     /**
+     * Save new wearable data (Phase 1: session-end persistence)
+     * @param {number} userId 
+     * @param {Object} data - Wearable data object with heart_rate, current_speed, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration
+     * @returns {Promise<{insertId: number, affectedRows: number}>}
+     */
+    async save(userId, data) {
+        const query = `
+            INSERT INTO \`${TABLES.WEARABLE_DATA}\`
+            (user_id, heart_rate, current_speed, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration, recorded_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `;
+        const values = [
+            userId,
+            data.heart_rate || 0,
+            data.current_speed || 0,
+            data.exercise_type || 'General',
+            data.set_count || 0,
+            data.sleep_duration || null,
+            data.sleep_quality || null,
+            data.rest_duration || null
+        ];
+        return await db.query(query, values);
+    }
+
+    /**
      * Get table schema
      * @param {string} tableName 
      * @returns {Promise<Array>}
