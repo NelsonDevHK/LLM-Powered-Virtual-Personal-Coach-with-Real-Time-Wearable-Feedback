@@ -50,6 +50,23 @@ class ConversationRepository {
         const rows = await db.query(query, [userId]);
         return rows[0]?.session_summary || null;
     }
+
+    /**
+     * Get most recent assistant response for this user
+     * @param {number} userId
+     * @returns {Promise<string|null>}
+     */
+    async getLastAssistantMessage(userId) {
+        const query = `
+            SELECT session_summary
+            FROM \`${TABLES.CONVERSATION_HISTORY}\`
+            WHERE user_id = ? AND role = 'assistant'
+            ORDER BY created_at DESC
+            LIMIT 1
+        `;
+        const rows = await db.query(query, [userId]);
+        return rows[0]?.session_summary || null;
+    }
     
     /**
      * Get all conversations

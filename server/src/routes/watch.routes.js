@@ -1,6 +1,6 @@
 /**
- * Watch Routes (Phase 1)
- * Routes for watch app endpoints: rest-feedback and session-end
+ * Watch Routes (Phase 2)
+ * Routes for watch app endpoints: in-session-feedback, rest-feedback (alias), and session-end
  */
 import { Router } from 'express';
 import WatchController from '../controllers/watch.controller.js';
@@ -9,11 +9,20 @@ import { authenticateJWT } from '../middleware/authenticateJWT.js';
 const router = Router();
 
 /**
- * POST /api/watch/rest-feedback
- * Generate rest-phase feedback (LLM-first suggestion, no DB persistence)
+ * POST /api/watch/in-session-feedback
+ * Generate personalized in-session watch feedback (no DB persistence)
  * Protected: Requires JWT token
  * Body: { heart_rate, current_speed, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration }
- * Response: { success, suggestion, metrics }
+ * Response: { success, suggestion, metrics, context }
+ */
+router.post('/in-session-feedback', authenticateJWT, WatchController.getInSessionFeedback);
+
+/**
+ * POST /api/watch/rest-feedback
+ * Backward-compatible alias for in-session feedback
+ * Protected: Requires JWT token
+ * Body: { heart_rate, current_speed, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration }
+ * Response: { success, suggestion, metrics, context }
  */
 router.post('/rest-feedback', authenticateJWT, WatchController.getRestFeedback);
 

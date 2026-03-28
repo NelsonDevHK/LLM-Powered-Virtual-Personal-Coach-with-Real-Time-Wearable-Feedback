@@ -7,15 +7,15 @@ import logger from '../utils/logger.js';
 
 class WatchController {
     /**
-     * POST /api/watch/rest-feedback
-     * Generate rest-phase feedback without persisting to DB
+     * POST /api/watch/in-session-feedback
+     * Generate personalized in-session feedback without persisting to DB
      * @param {Object} req
      * @param {Object} res
      * @param {Function} next
      */
-    static async getRestFeedback(req, res, next) {
+    static async getInSessionFeedback(req, res, next) {
         try {
-            const userId = req.user?.user_id; // From JWT middleware
+            const userId = req.user?.user_id;
             const sessionData = req.body;
 
             if (!userId) {
@@ -25,9 +25,8 @@ class WatchController {
                 });
             }
 
-            logger.info(`Rest-feedback request from user ${userId}`);
-
-            const result = await watchService.generateRestFeedback(userId, sessionData);
+            logger.info(`In-session feedback request from user ${userId}`);
+            const result = await watchService.generateInSessionFeedback(userId, sessionData);
 
             if (!result.success) {
                 return res.status(result.statusCode || 400).json({
@@ -39,12 +38,25 @@ class WatchController {
             return res.status(200).json({
                 success: true,
                 suggestion: result.suggestion,
-                metrics: result.metrics
+                metrics: result.metrics,
+                context: result.context
             });
         } catch (error) {
-            logger.error(`Rest-feedback controller error: ${error.message}`);
+            logger.error(`In-session feedback controller error: ${error.message}`);
             next(error);
         }
+    }
+
+    /**
+     * POST /api/watch/rest-feedback
+     * Generate rest-phase feedback without persisting to DB
+     * @param {Object} req
+     * @param {Object} res
+     * @param {Function} next
+     */
+    static async getRestFeedback(req, res, next) {
+        // Backward-compatible alias to the new Phase 2 path.
+        return WatchController.getInSessionFeedback(req, res, next);
     }
 
     /**

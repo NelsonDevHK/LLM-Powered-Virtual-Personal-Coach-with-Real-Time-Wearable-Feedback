@@ -15,6 +15,25 @@ class WearableRepository {
     }
 
     /**
+     * Get most recent wearable sessions for personalization context
+     * @param {number} userId
+     * @param {number} limit
+     * @returns {Promise<Array>}
+     */
+    async findRecentByUserId(userId, limit = 5) {
+        const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : 5;
+        const query = `
+            SELECT data_id, user_id, heart_rate, current_speed, exercise_type, set_count,
+                   sleep_duration, sleep_quality, rest_duration, recorded_at
+            FROM \`${TABLES.WEARABLE_DATA}\`
+            WHERE user_id = ?
+            ORDER BY recorded_at DESC
+            LIMIT ${safeLimit}
+        `;
+        return await db.query(query, [userId]);
+    }
+
+    /**
      * Save new wearable data (Phase 1: session-end persistence)
      * @param {number} userId 
      * @param {Object} data - Wearable data object with heart_rate, current_speed, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration

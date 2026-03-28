@@ -37,6 +37,22 @@ class UserRepository {
     }
 
     /**
+     * Get a compact profile used for coaching personalization
+     * @param {number} userId
+     * @returns {Promise<Object|null>}
+     */
+    async findProfileForCoaching(userId) {
+        const query = `
+            SELECT user_id, age, gender, exercise_level, fitness_goal, injuries
+            FROM \`${TABLES.USER}\`
+            WHERE user_id = ?
+            LIMIT 1
+        `;
+        const rows = await db.query(query, [userId]);
+        return rows[0] || null;
+    }
+
+    /**
      * Get table schema
      * @param {string} tableName 
      * @returns {Promise<Array>}
