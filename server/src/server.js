@@ -4,6 +4,7 @@ import logger from './utils/logger.js';
 import app from './app.js';
 import { db } from './database/index.js';
 import { initRAG } from './services/rag/index.js';
+import { preheatModel } from './services/llm_client.js';
 
 dotenv.config();
 
@@ -19,16 +20,20 @@ async function startServer() {
     logger.info('🔄 Initializing RAG Engine...');
     await initRAG();
 
-    // 3. Attach DB to app locals (so routes/controllers can access if needed directly)
+    // 3. Pre-heat Ollama Model (eliminates slow first generation)
+    logger.info('🔄 Pre-heating Ollama model...');
+    await preheatModel();
+
+    // 4. Attach DB to app locals (so routes/controllers can access if needed directly)
     // 但建議透過 Service 層訪問，這裡只是備用
     app.locals.db = db;
 
-    // 4. Start Server
+    // 5. Start Server
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running on http://localhost:${PORT}`);
     });
 
-    // 5. Graceful Shutdown
+    // 6. Graceful Shutdown
     const shutdown = async (signal) => {
       logger.info(`⚠️ ${signal} received. Shutting down gracefully...`);
       server.close(async () => {

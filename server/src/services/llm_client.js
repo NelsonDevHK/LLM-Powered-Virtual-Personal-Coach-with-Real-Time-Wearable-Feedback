@@ -88,4 +88,34 @@ async function getLLMResponse(question) {
     }
 }
 
-export { getLLMResponse };
+/**
+ * Pre-heat the Ollama model by making an initial lightweight call
+ * This loads the model into memory/VRAM and eliminates the slow first request
+ * Called on server startup to warm up the model before handling real requests
+ */
+async function preheatModel() {
+    const endpoint = buildEndpoint(OLLAMA_BASE);
+    const isGenerate = /\/api\/generate\/?$/.test(endpoint);
+    const warmupPrompt = 'hi';
+    const payload = isGenerate
+        ? { model: MODEL_NAME, prompt: warmupPrompt, stream: false }
+        : { model: MODEL_NAME, messages: [{ role: 'user', content: warmupPrompt }], stream: false };
+
+    try {
+        logger.info(`🔥 Pre-heating Ollama model '${MODEL_NAME}' at ${OLLAMA_BASE}...`);
+        const startTime = Date.now();
+        
+        await axios.post(endpoint, payload, {
+            headers: { Accept: 'application/json' },
+            timeout: TIMEOUT_MS,
+        });
+
+        const elapsed = Date.now() - startTime;
+        logger.info(`✅ Model pre-heat complete in ${elapsed}ms. Ready for requests!`);
+    } catch (err) {
+        logger.warn(`⚠️  Model pre-heat failed (non-blocking): ${err?.message || 'unknown error'}`);
+        // Don't throw - pre-heat is non-blocking; server continues even if warm-up fails
+    }
+}
+
+export { getLLMResponse, preheatModel };
