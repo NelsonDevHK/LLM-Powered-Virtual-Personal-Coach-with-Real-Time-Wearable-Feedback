@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReportChart from './ReportChart.jsx';
+import { getToken } from '../api/auth';
 import '../AppReport.css';
 
 // Helper to format session data for LLM prompt
@@ -28,7 +29,12 @@ export default function Report() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:3000/api/wearable/${userId}`)
+    const token = getToken();
+    fetch(`http://localhost:3000/api/wearable/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
       .then(res => res.json())
       .then(res => {
         if (res.success) {
@@ -185,9 +191,13 @@ export default function Report() {
                   setLlmSummary('');
                   try {
                     const prompt = `Please summarize the following workout session for a user in a friendly, concise way. Highlight effort, trends, and any advice.\n${formatSessionForLLM(selectedSession, sessionData)}`;
+                    const token = getToken();
                     const res = await fetch('http://localhost:3000/api/ask', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
                       body: JSON.stringify({ question: prompt })
                     });
                     const data = await res.json();
