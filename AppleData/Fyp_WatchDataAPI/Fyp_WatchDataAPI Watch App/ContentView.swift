@@ -49,14 +49,14 @@ struct ContentView: View {
                             .font(.caption2)
                             .foregroundColor(.secondary)
 
-                        TextField("http://192.168.x.x:3000", text: $backendURL)
+                        TextField("192.168.x.x", text: $backendURL)
                             .font(.caption2)
 
                         Button("Save Backend URL") {
                             let trimmed = backendURL.trimmingCharacters(in: .whitespacesAndNewlines)
                             if !trimmed.isEmpty {
                                 workoutManager.backendBaseURL = trimmed
-                                workoutManager.statusMessage = "Saved backend URL"
+                                workoutManager.statusMessage = "Saved backend IP/URL"
                             }
                         }
                         .buttonStyle(.bordered)
@@ -137,21 +137,24 @@ struct ContentView: View {
                         Text("💬 Feedback")
                             .font(.caption2)
                             .fontWeight(.semibold)
-                            .foregroundColor(.blue)
+                            .foregroundColor(.white)
 
-                        Text(workoutManager.statusMessage)
-                            .font(.caption2)
-                            .foregroundColor(.primary)
-                            .lineLimit(5)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: .infinity, maxHeight: 60, alignment: .topLeading)
-                            .padding(6)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(4)
+                        ScrollView(.vertical, showsIndicators: true) {
+                            Text(workoutManager.statusMessage)
+                                .font(.caption2)
+                                .foregroundColor(.white)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                .multilineTextAlignment(.leading)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 80, maxHeight: 120, alignment: .topLeading)
+                        .padding(6)
+                        .background(Color(.sRGB, red: 0.2, green: 0.2, blue: 0.2, opacity: 1))
+                        .cornerRadius(4)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(8)
-                    .background(Color(.systemGray5))
+                    .background(Color(.sRGB, red: 0.15, green: 0.15, blue: 0.15, opacity: 1))
                     .cornerRadius(6)
 
                     Divider()
@@ -183,25 +186,30 @@ struct ContentView: View {
                                 }
                                 isRestPhase.toggle()
                                 phaseStartDate = Date()
-
-                                // Call feedback endpoint when entering rest phase.
-                                if !wasRestPhase && isRestPhase {
-                                    workoutManager.sendInSessionFeedback(
-                                        exerciseType: selectedExerciseType.rawValue,
-                                        setCount: setCount,
-                                        restDuration: 0
-                                    ) { success, message in
-                                        workoutManager.statusMessage = success
-                                            ? "Coach: \(message)"
-                                            : "Feedback error: \(message)"
-                                    }
-                                }
                             }) {
                                 Text(isRestPhase ? "Start Set" : "Start Rest")
                                     .font(.caption2)
                             }
                             .buttonStyle(.bordered)
                             .tint(isRestPhase ? .green : .orange)
+
+                            Button(action: {
+                                let restMinutes = currentPhaseElapsedMinutes
+                                workoutManager.sendInSessionFeedback(
+                                    exerciseType: selectedExerciseType.rawValue,
+                                    setCount: setCount,
+                                    restDuration: restMinutes
+                                ) { success, message in
+                                    workoutManager.statusMessage = success
+                                        ? "Coach: \(message)"
+                                        : "Feedback error: \(message)"
+                                }
+                            }) {
+                                Text("Get Feedback")
+                                    .font(.caption2)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.blue)
                         }
                     }
 

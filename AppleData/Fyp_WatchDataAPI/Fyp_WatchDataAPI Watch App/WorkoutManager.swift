@@ -15,6 +15,12 @@ class WorkoutManager: NSObject, ObservableObject {
     private let backendBaseURLKey = "watch_backend_base_url"
     private let watchJWTKey = "watch_jwt"
     private let watchDeviceUUIDKey = "watch_device_uuid"
+
+#if targetEnvironment(simulator)
+    private let defaultBackendBaseURL = "http://localhost:3000"
+#else
+    private let defaultBackendBaseURL = ""
+#endif
     
     var workoutSession: HKWorkoutSession?
     var builder: HKLiveWorkoutBuilder?
@@ -26,11 +32,47 @@ class WorkoutManager: NSObject, ObservableObject {
 
     var backendBaseURL: String {
         get {
-            UserDefaults.standard.string(forKey: backendBaseURLKey) ?? "http://localhost:3000"
+            UserDefaults.standard.string(forKey: backendBaseURLKey) ?? defaultBackendBaseURL
         }
         set {
             UserDefaults.standard.set(newValue, forKey: backendBaseURLKey)
         }
+    }
+
+    private var normalizedBackendBaseURL: String {
+        let trimmed = backendBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+
+        if trimmed.contains("://") {
+            return trimmed
+        }
+
+        let hasExplicitPort = trimmed.split(separator: ":").count > 1
+        let hostAndPort = hasExplicitPort ? trimmed : "\(trimmed):3000"
+        return "http://\(hostAndPort)"
+    }
+
+    private func isInvalidPhysicalWatchURL(_ baseURL: String) -> Bool {
+#if targetEnvironment(simulator)
+        return false
+#else
+        guard let host = URL(string: baseURL)?.host?.lowercased() else { return false }
+        return host == "localhost" || host == "127.0.0.1"
+#endif
+    }
+
+    private func validateBackendURLForCurrentDevice() -> String? {
+        let normalized = normalizedBackendBaseURL
+        if normalized.isEmpty {
+            return "Set backend IP first (e.g. 192.168.x.x)."
+        }
+        if isInvalidPhysicalWatchURL(normalized) {
+            return "On physical watch, localhost is invalid. Use Mac LAN IP (e.g. 192.168.x.x)."
+        }
+        guard URL(string: normalized) != nil else {
+            return "Invalid backend IP or URL"
+        }
+        return nil
     }
 
     var currentWatchJWT: String? {
@@ -53,7 +95,12 @@ class WorkoutManager: NSObject, ObservableObject {
             return
         }
 
-        guard let url = URL(string: "\(backendBaseURL)/api/watch/pair-confirm") else {
+        if let urlError = validateBackendURLForCurrentDevice() {
+            completion(false, urlError)
+            return
+        }
+
+        guard let url = URL(string: "\(normalizedBackendBaseURL)/api/watch/pair-confirm") else {
             completion(false, "Invalid backend URL")
             return
         }
@@ -100,6 +147,11 @@ class WorkoutManager: NSObject, ObservableObject {
     }
 
     func sendInSessionFeedback(exerciseType: String, setCount: Int, restDuration: Int, completion: @escaping (Bool, String) -> Void) {
+        if let urlError = validateBackendURLForCurrentDevice() {
+            completion(false, urlError)
+            return
+        }
+
         let payload: [String: Any] = [
             "heart_rate": Int(heartRate),
             "current_speed": 0,
@@ -122,6 +174,11 @@ class WorkoutManager: NSObject, ObservableObject {
     }
 
     func sendSessionEnd(exerciseType: String, setCount: Int, restDuration: Int, completion: @escaping (Bool, String) -> Void) {
+        if let urlError = validateBackendURLForCurrentDevice() {
+            completion(false, urlError)
+            return
+        }
+
         let payload: [String: Any] = [
             "heart_rate": Int(heartRate),
             "current_speed": 0,
@@ -149,7 +206,7 @@ class WorkoutManager: NSObject, ObservableObject {
             return
         }
 
-        guard let url = URL(string: "\(backendBaseURL)\(path)") else {
+        guard let url = URL(string: "\(normalizedBackendBaseURL)\(path)") else {
             completion(false, nil, "Invalid backend URL")
             return
         }
