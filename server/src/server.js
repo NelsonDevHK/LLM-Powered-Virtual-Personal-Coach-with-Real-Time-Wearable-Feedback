@@ -20,8 +20,8 @@ async function startServer() {
     logger.info('🔄 Initializing RAG Engine...');
     await initRAG();
 
-    // 3. Pre-heat Ollama Model (eliminates slow first generation)
-    logger.info('🔄 Pre-heating Ollama model...');
+    // 3. One-shot pre-heat (brief warm window for faster first response)
+    logger.info('🔄 One-shot pre-heating Ollama model...');
     await preheatModel();
 
     // 4. Attach DB to app locals (so routes/controllers can access if needed directly)

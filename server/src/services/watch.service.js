@@ -8,13 +8,57 @@ import wearableRepository from '../database/repositories/wearable_repository.js'
 import conversationRepository from '../database/repositories/conversation_repository.js';
 import ragService from './rag.service.js';
 import { getLLMResponse } from './llm_client.js';
+import llmGateService from './llm_gate.service.js';
 import logger from '../utils/logger.js';
 
 const SESSION_CONTEXT_TTL_MS = Number(process.env.WATCH_SESSION_CACHE_TTL_MS || 60 * 60 * 1000);
+const FEEDBACK_DEDUP_MS = 3000; // Prevent duplicate requests within 3 seconds
 
 class WatchService {
     constructor() {
         this.sessionContextCache = new Map();
+        this.pendingFeedbackRequests = new Map(); // Track in-flight requests for deduplication
+        this.lastFeedbackTime = new Map(); // Track when last feedback was sent per session
+        
+        // Auto-cleanup expired cache entries every 30 seconds
+        this.cacheCleanupInterval = setInterval(() => {
+            this._cleanupExpiredCache();
+        }, 30 * 1000);
+    }
+
+    /**
+     * Cleanup expired cache entries to prevent memory leak
+     * @private
+     */
+    _cleanupExpiredCache() {
+        let cleaned = 0;
+        for (const [key, entry] of this.sessionContextCache.entries()) {
+            if (!this._isCacheEntryValid(entry)) {
+                this.sessionContextCache.delete(key);
+                this.pendingFeedbackRequests.delete(key);
+                this.lastFeedbackTime.delete(key);
+                cleaned++;
+            }
+        }
+        // Keep dedup map bounded even if a session never reaches session-end.
+        for (const [key, ts] of this.lastFeedbackTime.entries()) {
+            if (Date.now() - ts > FEEDBACK_DEDUP_MS * 10) {
+                this.lastFeedbackTime.delete(key);
+            }
+        }
+        if (cleaned > 0) {
+            logger.info(`🧹 Cache cleanup: removed ${cleaned} expired entries`);
+        }
+    }
+
+    /**
+     * Check if duplicate feedback request (too soon)
+     * @private
+     */
+    _isDuplicateRequest(cacheKey) {
+        const lastTime = this.lastFeedbackTime.get(cacheKey);
+        if (!lastTime) return false;
+        return Date.now() - lastTime < FEEDBACK_DEDUP_MS;
     }
 
     /**
@@ -40,62 +84,45 @@ class WatchService {
                 };
             }
 
-            watchValidationService.logValidation(validation, 'in-session-feedback');
-            const preparedData = watchValidationService.prepareForRestFeedback(validation.data);
-            const cacheKey = this._getSessionCacheKey(userId, sessionData);
+            return llmGateService.runExclusive(userId, 'watch-feedback', async () => {
+                watchValidationService.logValidation(validation, 'in-session-feedback');
+                const preparedData = watchValidationService.prepareForRestFeedback(validation.data);
+                const cacheKey = this._getSessionCacheKey(userId, sessionData);
 
-            const sessionContext = await this._getOrBuildSessionContext(userId, cacheKey);
-            const {
-                profile,
-                recentSessions,
-                ragAdvice,
-                lastAssistantMessage
-            } = sessionContext;
-
-            const prompt = this._buildPersonalizedInSessionPrompt({
-                metrics: preparedData,
-                profile,
-                recentSessions,
-                ragAdvice,
-                lastAssistantMessage
-            });
-
-            let suggestion = null;
-            try {
-                suggestion = await getLLMResponse(prompt);
-            } catch (llmError) {
-                logger.warn(`LLM query failed for in-session feedback: ${llmError.message}`);
-            }
-
-            if (!suggestion || !suggestion.trim()) {
-                suggestion = this._generateFallbackRestSuggestion(preparedData, profile, recentSessions);
-            }
-
-            if (this._isTooSimilarSuggestion(suggestion, lastAssistantMessage)) {
-                suggestion = this._generateDiverseFallbackSuggestion(preparedData, profile);
-            }
-
-            suggestion = this._trimToSingleSentence(suggestion);
-            this._updateCachedLastAssistantMessage(cacheKey, suggestion);
-
-            return {
-                success: true,
-                suggestion,
-                metrics: {
-                    heart_rate: preparedData.heart_rate,
-                    current_speed: preparedData.current_speed,
-                    exercise_type: preparedData.exercise_type,
-                    set_count: preparedData.set_count,
-                    sleep_duration: preparedData.sleep_duration ?? null,
-                    sleep_quality: preparedData.sleep_quality ?? null,
-                    rest_duration: preparedData.rest_duration ?? null
-                },
-                context: {
-                    used_profile: Boolean(profile),
-                    recent_sessions_count: Array.isArray(recentSessions) ? recentSessions.length : 0,
-                    used_rag: Boolean(ragAdvice)
+                // DEDUPLICATION: Reject if same user/session sent feedback too recently
+                if (this._isDuplicateRequest(cacheKey)) {
+                    logger.warn(`⏱️ Duplicate feedback request (too soon) for ${cacheKey}, rejecting`);
+                    return {
+                        success: false,
+                        error: 'Too many feedback requests. Wait a moment.',
+                        statusCode: 429
+                    };
                 }
-            };
+
+                // CHECK FOR PENDING REQUEST: If already processing, reuse that promise
+                if (this.pendingFeedbackRequests.has(cacheKey)) {
+                    logger.info(`⏳ Reusing pending feedback for ${cacheKey}`);
+                    return this.pendingFeedbackRequests.get(cacheKey);
+                }
+
+                // Mark as pending to prevent duplicate processing
+                const feedbackPromise = this._generateFeedbackInternal(userId, sessionData, cacheKey, preparedData);
+                this.pendingFeedbackRequests.set(cacheKey, feedbackPromise);
+
+                // Await and clean up pending marker
+                let result;
+                try {
+                    result = await feedbackPromise;
+                } finally {
+                    // Always clear pending marker, including when errors occur.
+                    this.pendingFeedbackRequests.delete(cacheKey);
+                }
+
+                // Record timestamp for deduplication
+                this.lastFeedbackTime.set(cacheKey, Date.now());
+
+                return result;
+            });
         } catch (error) {
             logger.error(`In-session feedback generation error: ${error.message}`);
             return {
@@ -104,6 +131,65 @@ class WatchService {
                 statusCode: 500
             };
         }
+    }
+
+    /**
+     * Internal method to generate feedback (separated for deduplication)
+     * @private
+     */
+    async _generateFeedbackInternal(userId, sessionData, cacheKey, preparedData) {
+        const sessionContext = await this._getOrBuildSessionContext(userId, cacheKey);
+        const {
+            profile,
+            recentSessions,
+            ragAdvice,
+            lastAssistantMessage
+        } = sessionContext;
+
+        const prompt = this._buildPersonalizedInSessionPrompt({
+            metrics: preparedData,
+            profile,
+            recentSessions,
+            ragAdvice,
+            lastAssistantMessage
+        });
+
+        let suggestion = null;
+        try {
+            suggestion = await getLLMResponse(prompt);
+        } catch (llmError) {
+            logger.warn(`LLM query failed for in-session feedback: ${llmError.message}`);
+        }
+
+        if (!suggestion || !suggestion.trim()) {
+            suggestion = this._generateFallbackRestSuggestion(preparedData, profile, recentSessions);
+        }
+
+        if (this._isTooSimilarSuggestion(suggestion, lastAssistantMessage)) {
+            suggestion = this._generateDiverseFallbackSuggestion(preparedData, profile);
+        }
+
+        suggestion = this._trimToSingleSentence(suggestion);
+        this._updateCachedLastAssistantMessage(cacheKey, suggestion);
+
+        return {
+            success: true,
+            suggestion,
+            metrics: {
+                heart_rate: preparedData.heart_rate,
+                current_speed: preparedData.current_speed,
+                exercise_type: preparedData.exercise_type,
+                set_count: preparedData.set_count,
+                sleep_duration: preparedData.sleep_duration ?? null,
+                sleep_quality: preparedData.sleep_quality ?? null,
+                rest_duration: preparedData.rest_duration ?? null
+            },
+            context: {
+                used_profile: Boolean(profile),
+                recent_sessions_count: Array.isArray(recentSessions) ? recentSessions.length : 0,
+                used_rag: Boolean(ragAdvice)
+            }
+        };
     }
 
     /**
@@ -116,6 +202,16 @@ class WatchService {
     async generateRestFeedback(userId, sessionData) {
         // Phase 2: keep old endpoint as a compatibility alias.
         return this.generateInSessionFeedback(userId, sessionData);
+    }
+
+    /**
+     * Clean up resources on service shutdown
+     */
+    destroy() {
+        if (this.cacheCleanupInterval) {
+            clearInterval(this.cacheCleanupInterval);
+            logger.info('🛑 Watch service cleanup interval stopped');
+        }
     }
 
     /**
@@ -366,7 +462,7 @@ Output only the one-sentence feedback.`;
 
         let ragAdvice = '';
         try {
-            const ragAdviceArr = await ragService.getAdviceContent(userId, groupedUserData);
+            const ragAdviceArr = await ragService.getAdviceContent(userId, groupedUserData, { useGate: false });
             ragAdvice = Array.isArray(ragAdviceArr) ? ragAdviceArr.join('\n') : '';
         } catch (ragError) {
             logger.warn(`RAG lookup failed for in-session feedback user ${userId}: ${ragError.message}`);
@@ -394,10 +490,17 @@ Output only the one-sentence feedback.`;
 
     _clearUserSessionCache(userId) {
         const prefix = `${userId}:`;
+        let cleared = 0;
         for (const key of this.sessionContextCache.keys()) {
             if (key.startsWith(prefix)) {
                 this.sessionContextCache.delete(key);
+                this.lastFeedbackTime.delete(key);
+                this.pendingFeedbackRequests.delete(key);
+                cleared++;
             }
+        }
+        if (cleared > 0) {
+            logger.info(`✅ Cleared ${cleared} cache entries for user ${userId}`);
         }
     }
 }

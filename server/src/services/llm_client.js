@@ -5,6 +5,13 @@ import logger from '../utils/logger.js';
 const OLLAMA_BASE = process.env.OLLAMA_HOST || 'http://localhost:11434';
 const MODEL_NAME = process.env.OLLAMA_LLM_MODEL_NAME || process.env.OLLAMA_MODEL || 'phi4-mini';
 const TIMEOUT_MS = Number(process.env.OLLAMA_TIMEOUT_MS || 120000); // 120s default to surface server errors
+// Keep at 0s in low-memory mode so the model unloads after each real request.
+const OLLAMA_KEEP_ALIVE = process.env.OLLAMA_KEEP_ALIVE || '0s';
+// One-shot preheat mode: warm briefly at startup for faster first reply.
+const PREHEAT_ENABLED = String(process.env.OLLAMA_PREHEAT_ENABLED || 'true').toLowerCase() === 'true';
+const PREHEAT_KEEP_ALIVE = process.env.OLLAMA_PREHEAT_KEEP_ALIVE || '15s';
+const PREHEAT_MAX_TOKENS = Number(process.env.OLLAMA_PREHEAT_MAX_TOKENS || 8);
+const PREHEAT_UNLOAD_AFTER_WARMUP = String(process.env.OLLAMA_PREHEAT_UNLOAD_AFTER_WARMUP || 'true').toLowerCase() !== 'false';
 
 
 
@@ -25,6 +32,32 @@ function buildEndpoint(url) {
         return `${String(url).replace(/\/$/, '')}/api/generate`;
 }
 
+/**
+ * Explicitly unload the model from Ollama to force KV cache release
+ * Sends a dummy request with keep_alive=0s to trigger immediate unload
+ */
+async function unloadModel() {
+    try {
+        const endpoint = buildEndpoint(OLLAMA_BASE);
+        const isGenerate = /\/api\/generate\/?$/.test(endpoint);
+        
+        // Send minimal request with keep_alive=0s to force unload
+        const payload = isGenerate
+            ? { model: MODEL_NAME, prompt: '', stream: false, keep_alive: '0s' }
+            : { model: MODEL_NAME, messages: [], stream: false, keep_alive: '0s' };
+
+        await axios.post(endpoint, payload, {
+            headers: { Accept: 'application/json' },
+            timeout: 5000, // Quick timeout for unload
+        });
+        
+        logger.debug(`Model '${MODEL_NAME}' unloaded from memory`);
+    } catch (err) {
+        // Unload failures are non-critical, just log them
+        logger.debug(`Unload signal sent to Ollama (may be already unloaded): ${err?.message}`);
+    }
+}
+
 async function getLLMResponse(question) {
     logger.info('sending question to link {OLLAMA_BASE} with model {MODEL_NAME}');
     const endpoint = buildEndpoint(OLLAMA_BASE);
@@ -32,8 +65,8 @@ async function getLLMResponse(question) {
     const messages = normalizeMessages(question);
     const prompt = messages.map((m) => `${m.role}: ${m.content}`).join('\n');
     const payload = isGenerate
-        ? { model: MODEL_NAME, prompt, stream: false }
-        : { model: MODEL_NAME, messages, stream: false };
+        ? { model: MODEL_NAME, prompt, stream: false, keep_alive: OLLAMA_KEEP_ALIVE }
+        : { model: MODEL_NAME, messages, stream: false, keep_alive: OLLAMA_KEEP_ALIVE };
 
     try {
         const response = await axios.post(endpoint, payload, {
@@ -85,6 +118,10 @@ async function getLLMResponse(question) {
         }
         console.error('Ollama error:', err?.message || err);
         throw new Error(err?.message || '未知錯誤');
+    } finally {
+        // CRITICAL: Always unload model after inference to prevent memory accumulation
+        // This forces Ollama to release the KV cache immediately
+        await unloadModel();
     }
 }
 
@@ -94,15 +131,35 @@ async function getLLMResponse(question) {
  * Called on server startup to warm up the model before handling real requests
  */
 async function preheatModel() {
+    if (!PREHEAT_ENABLED) {
+        logger.info('Skipping Ollama pre-heat (OLLAMA_PREHEAT_ENABLED=false).');
+        return;
+    }
+
     const endpoint = buildEndpoint(OLLAMA_BASE);
     const isGenerate = /\/api\/generate\/?$/.test(endpoint);
     const warmupPrompt = 'hi';
     const payload = isGenerate
-        ? { model: MODEL_NAME, prompt: warmupPrompt, stream: false }
-        : { model: MODEL_NAME, messages: [{ role: 'user', content: warmupPrompt }], stream: false };
+        ? {
+            model: MODEL_NAME,
+            prompt: warmupPrompt,
+            stream: false,
+            keep_alive: PREHEAT_KEEP_ALIVE,
+            options: { num_predict: PREHEAT_MAX_TOKENS, temperature: 0 }
+        }
+        : {
+            model: MODEL_NAME,
+            messages: [{ role: 'user', content: warmupPrompt }],
+            stream: false,
+            keep_alive: PREHEAT_KEEP_ALIVE,
+            options: { num_predict: PREHEAT_MAX_TOKENS, temperature: 0 }
+        };
 
     try {
-        logger.info(`🔥 Pre-heating Ollama model '${MODEL_NAME}' at ${OLLAMA_BASE}...`);
+        logger.info(
+            `Pre-heating Ollama model '${MODEL_NAME}' at ${OLLAMA_BASE} ` +
+            `(one-shot mode, keep_alive=${PREHEAT_KEEP_ALIVE})...`
+        );
         const startTime = Date.now();
         
         await axios.post(endpoint, payload, {
@@ -111,11 +168,16 @@ async function preheatModel() {
         });
 
         const elapsed = Date.now() - startTime;
-        logger.info(`✅ Model pre-heat complete in ${elapsed}ms. Ready for requests!`);
+        logger.info(`Model pre-heat complete in ${elapsed}ms. Ready for requests.`);
+
+        if (PREHEAT_UNLOAD_AFTER_WARMUP) {
+            await unloadModel();
+            logger.info('Pre-heat warmup finished and model was unloaded immediately.');
+        }
     } catch (err) {
         logger.warn(`⚠️  Model pre-heat failed (non-blocking): ${err?.message || 'unknown error'}`);
         // Don't throw - pre-heat is non-blocking; server continues even if warm-up fails
     }
 }
 
-export { getLLMResponse, preheatModel };
+export { getLLMResponse, preheatModel, unloadModel };
