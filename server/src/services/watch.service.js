@@ -288,10 +288,9 @@ class WatchService {
 Current in-session metrics:
 - Exercise type: ${metrics.exercise_type}
 - Heart rate: ${metrics.heart_rate} bpm
-- Current speed: ${metrics.current_speed} km/h
 - Sets completed: ${metrics.set_count}
 - Rest duration: ${metrics.rest_duration ?? 'unknown'} min
-- Sleep duration: ${metrics.sleep_duration ?? 'unknown'} h
+- Sleep duration: ${metrics.sleep_duration ?? 'unknown'} min
 - Sleep quality: ${metrics.sleep_quality ?? 'unknown'}
 
 User profile:
@@ -372,7 +371,7 @@ Output only the one-sentence feedback.`;
         }
 
         if (Number(metrics.heart_rate) > 155) {
-            options.unshift('Hold rest a bit longer and restart at a slightly easier pace to keep intensity safe.');
+            options.unshift('Hold rest a bit longer and restart with lighter intensity to keep effort safe.');
         }
 
         return options[Math.floor(Math.random() * options.length)];

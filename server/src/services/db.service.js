@@ -19,6 +19,11 @@ export class dbService {
                 fitness_goal: userInfo?.fitness_goal ?? null,
                 heart_rate: wearableRecord?.heart_rate ?? null,
                 current_speed: wearableRecord?.current_speed ?? wearableRecord?.speed ?? null,
+                sleep_duration: wearableRecord?.sleep_duration ?? null,
+                sleep_quality: wearableRecord?.sleep_quality ?? null,
+                rest_duration: wearableRecord?.rest_duration ?? null,
+                exercise_type: wearableRecord?.exercise_type ?? null,
+                set_count: wearableRecord?.set_count ?? null,
             };
 
             //logger.info(`Fetched RAG data for user_id=${userId}: ${JSON.stringify(ragDict, null, 2)}`);
@@ -48,6 +53,11 @@ export class dbService {
                 age: userInfo?.age ?? null,
                 heart_rate: wearableRecord?.heart_rate ?? null,
                 current_speed: wearableRecord?.current_speed ?? wearableRecord?.speed ?? null,
+                sleep_duration: wearableRecord?.sleep_duration ?? null,
+                sleep_quality: wearableRecord?.sleep_quality ?? null,
+                rest_duration: wearableRecord?.rest_duration ?? null,
+                exercise_type: wearableRecord?.exercise_type ?? null,
+                set_count: wearableRecord?.set_count ?? null,
                 conversation_history: conversationHistory?.session_summary ?? [],
             };
 

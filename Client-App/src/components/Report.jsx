@@ -7,12 +7,17 @@ import '../AppReport.css';
 function formatSessionForLLM(date, sessionData) {
   if (!sessionData.length) return 'No data.';
   const hr = sessionData.map(d => d.heart_rate).join(', ');
-  const sp = sessionData.map(d => d.current_speed).join(', ');
-  return `Session on ${date}:\nHeart rates: [${hr}]\nSpeeds: [${sp}]`;
+  const sets = sessionData.map(d => d.set_count ?? '-').join(', ');
+  const rest = sessionData.map(d => d.rest_duration ?? '-').join(', ');
+  const sleepDuration = sessionData.map(d => d.sleep_duration ?? '-').join(', ');
+  const sleepQuality = sessionData.map(d => d.sleep_quality ?? '-').join(', ');
+  const exerciseType = Array.from(new Set(sessionData.map(d => d.exercise_type || 'General'))).join(', ');
+  return `Session on ${date}:\nExercise Type(s): ${exerciseType}\nHeart rates: [${hr}]\nSet count: [${sets}]\nRest duration (min): [${rest}]\nSleep duration (min): [${sleepDuration}]\nSleep quality (1-5): [${sleepQuality}]`;
 }
 
 
 export default function Report() {
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
   const [llmSummary, setLlmSummary] = useState('');
   const [llmLoading, setLlmLoading] = useState(false);
   const [llmError, setLlmError] = useState('');
@@ -30,7 +35,7 @@ export default function Report() {
   useEffect(() => {
     setLoading(true);
     const token = getToken();
-    fetch(`http://localhost:3000/api/wearable/${userId}`, {
+    fetch(`${API_BASE}/api/wearable/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -55,7 +60,7 @@ export default function Report() {
         setError(e.message);
         setLoading(false);
       });
-  }, [userId]);
+  }, [API_BASE, userId]);
 
   // When month changes, update sessions and selected session
   useEffect(() => {
@@ -73,7 +78,11 @@ export default function Report() {
 
   // Calculate stats for the selected session
   const heartRates = sessionData.map(d => d.heart_rate);
-  const speeds = sessionData.map(d => d.current_speed);
+  const setCounts = sessionData.map(d => d.set_count).filter(v => Number.isFinite(Number(v))).map(Number);
+  const restDurations = sessionData.map(d => d.rest_duration).filter(v => Number.isFinite(Number(v))).map(Number);
+  const sleepDurations = sessionData.map(d => d.sleep_duration).filter(v => Number.isFinite(Number(v))).map(Number);
+  const sleepQualities = sessionData.map(d => d.sleep_quality).filter(v => Number.isFinite(Number(v))).map(Number);
+  const exerciseTypes = Array.from(new Set(sessionData.map(d => d.exercise_type || 'General')));
   const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : '-';
   const min = arr => arr.length ? Math.min(...arr) : '-';
   const max = arr => arr.length ? Math.max(...arr) : '-';
@@ -87,18 +96,14 @@ export default function Report() {
     if (!sessionGroups[date]) sessionGroups[date] = [];
     sessionGroups[date].push(d);
   });
-  // For each session, calculate average heart rate and speed
+  // For each session, calculate average heart rate
   const sessionSummaries = Object.entries(sessionGroups).map(([date, arr]) => {
     const hr = arr.map(d => d.heart_rate);
-    const sp = arr.map(d => d.current_speed);
     return {
       date,
       avgHeartRate: hr.length ? hr.reduce((a, b) => a + b, 0) / hr.length : 0,
-      avgSpeed: sp.length ? sp.reduce((a, b) => a + b, 0) / sp.length : 0,
       minHeartRate: hr.length ? Math.min(...hr) : 0,
       maxHeartRate: hr.length ? Math.max(...hr) : 0,
-      minSpeed: sp.length ? Math.min(...sp) : 0,
-      maxSpeed: sp.length ? Math.max(...sp) : 0,
       count: arr.length
     };
   });
@@ -106,7 +111,22 @@ export default function Report() {
   const bestSession = sessionSummaries.reduce((best, curr) => curr.avgHeartRate > (best?.avgHeartRate ?? -Infinity) ? curr : best, null);
   const worstSession = sessionSummaries.reduce((worst, curr) => curr.avgHeartRate < (worst?.avgHeartRate ?? Infinity) ? curr : worst, null);
   const monthAvgHR = sessionSummaries.length ? (sessionSummaries.reduce((sum, s) => sum + s.avgHeartRate, 0) / sessionSummaries.length).toFixed(2) : '-';
-  const monthAvgSpeed = sessionSummaries.length ? (sessionSummaries.reduce((sum, s) => sum + s.avgSpeed, 0) / sessionSummaries.length).toFixed(2) : '-';
+  const monthAvgSleepDuration = monthData.length
+    ? (monthData
+      .map(d => Number(d.sleep_duration))
+      .filter(Number.isFinite)
+      .reduce((sum, v) => sum + v, 0)
+      / Math.max(1, monthData.map(d => Number(d.sleep_duration)).filter(Number.isFinite).length)
+    ).toFixed(1)
+    : '-';
+  const monthAvgSleepQuality = monthData.length
+    ? (monthData
+      .map(d => Number(d.sleep_quality))
+      .filter(Number.isFinite)
+      .reduce((sum, v) => sum + v, 0)
+      / Math.max(1, monthData.map(d => Number(d.sleep_quality)).filter(Number.isFinite).length)
+    ).toFixed(2)
+    : '-';
 
   return (
     <div className="report-container">
@@ -150,15 +170,15 @@ export default function Report() {
               <div style={{ marginBottom: 16 }}>
                 <b>Average (All Sessions):</b><br/>
                 Heart Rate: <b>{monthAvgHR}</b><br/>
-                Speed: <b>{monthAvgSpeed}</b>
+                Sleep Duration: <b>{monthAvgSleepDuration}</b> min<br/>
+                Sleep Quality: <b>{monthAvgSleepQuality}</b>/5
               </div>
               <div style={{ marginBottom: 16 }}>
                 <b>Best Session:</b><br/>
                 {bestSession ? (
                   <>
                     {bestSession.date}<br/>
-                    Avg HR: <b>{bestSession.avgHeartRate.toFixed(2)}</b><br/>
-                    Avg Speed: <b>{bestSession.avgSpeed.toFixed(2)}</b>
+                    Avg HR: <b>{bestSession.avgHeartRate.toFixed(2)}</b>
                   </>
                 ) : 'N/A'}
               </div>
@@ -167,8 +187,7 @@ export default function Report() {
                 {worstSession ? (
                   <>
                     {worstSession.date}<br/>
-                    Avg HR: <b>{worstSession.avgHeartRate.toFixed(2)}</b><br/>
-                    Avg Speed: <b>{worstSession.avgSpeed.toFixed(2)}</b>
+                    Avg HR: <b>{worstSession.avgHeartRate.toFixed(2)}</b>
                   </>
                 ) : 'N/A'}
               </div>
@@ -181,7 +200,11 @@ export default function Report() {
             <div className="report-summary-inner">
               <h4>Session Summary ({selectedSession})</h4>
               <div>Heart Rate: Avg <b>{avg(heartRates)}</b> | Min <b>{min(heartRates)}</b> | Max <b>{max(heartRates)}</b></div>
-              <div>Speed: Avg <b>{avg(speeds)}</b> | Min <b>{min(speeds)}</b> | Max <b>{max(speeds)}</b></div>
+              <div>Set Count: Avg <b>{avg(setCounts)}</b> | Min <b>{min(setCounts)}</b> | Max <b>{max(setCounts)}</b></div>
+              <div>Rest Duration (min): Avg <b>{avg(restDurations)}</b> | Min <b>{min(restDurations)}</b> | Max <b>{max(restDurations)}</b></div>
+              <div>Sleep Duration (min): Avg <b>{avg(sleepDurations)}</b> | Min <b>{min(sleepDurations)}</b> | Max <b>{max(sleepDurations)}</b></div>
+              <div>Sleep Quality (1-5): Avg <b>{avg(sleepQualities)}</b> | Min <b>{min(sleepQualities)}</b> | Max <b>{max(sleepQualities)}</b></div>
+              <div>Exercise Type(s): <b>{exerciseTypes.length ? exerciseTypes.join(', ') : 'N/A'}</b></div>
               <div>Data Points: <b>{sessionData.length}</b></div>
               <button
                 className="report-btn"
@@ -192,7 +215,7 @@ export default function Report() {
                   try {
                     const prompt = `Please summarize the following workout session for a user in a friendly, concise way. Highlight effort, trends, and any advice.\n${formatSessionForLLM(selectedSession, sessionData)}`;
                     const token = getToken();
-                    const res = await fetch('http://localhost:3000/api/ask', {
+                    const res = await fetch(`${API_BASE}/api/ask`, {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',

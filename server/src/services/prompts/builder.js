@@ -50,13 +50,36 @@ export class LlmPromptBuilder extends PromptBuilder {
             .replace(/\{age\}/g, String(userDict.age ?? "unknown"))
             .replace(/\{excercise_level\}/g, userDict.excercise_level ?? "unknown")
             .replace(/\{heart_rate\}/g, String(userDict.heart_rate ?? "unknown"))
-            .replace(/\{speed\}/g, String(userDict.current_speed ?? "unknown"))
             .replace(/\{context\}/g, (ragAdvice ?? []).join("\n") || "No advice available")
             .replace(/\{history\}/g, userDict.conversation_history ?? "No conversation history");
 
+        const extraContext = `\n\nADDITIONAL WEARABLE CONTEXT:\n- Exercise type: ${userDict.exercise_type ?? "unknown"}\n- Set count: ${userDict.set_count ?? "unknown"}\n- Rest duration: ${userDict.rest_duration ?? "unknown"} min\n- Sleep duration: ${userDict.sleep_duration ?? "unknown"} min\n- Sleep quality: ${userDict.sleep_quality ?? "unknown"}/5`;
+
         //logger.info(`Built LLM prompt for user data: ${JSON.stringify(userDict, null, 2)}, RAG advice: ${JSON.stringify(ragAdvice, null, 2)}. Resulting prompt: ${prompt}`);
 
-        return prompt;
+        return `${prompt}${extraContext}`;
+    }
+
+    async buildSessionSummaryPrompt(userDict) {
+        return `You are a fitness coach. Summarize this workout session briefly and practically in 4-6 sentences.
+
+User profile:
+- Age: ${userDict.age ?? 'unknown'}
+- Exercise level: ${userDict.excercise_level ?? 'unknown'}
+
+Latest wearable metrics:
+- Heart rate: ${userDict.heart_rate ?? 'unknown'} bpm
+- Exercise type: ${userDict.exercise_type ?? 'unknown'}
+- Set count: ${userDict.set_count ?? 'unknown'}
+- Rest duration: ${userDict.rest_duration ?? 'unknown'} min
+- Sleep duration: ${userDict.sleep_duration ?? 'unknown'} min
+- Sleep quality: ${userDict.sleep_quality ?? 'unknown'}/5
+
+Include:
+1) overall effort,
+2) one strength,
+3) one area to improve,
+4) one next-session action.`;
     }
 }
     

@@ -391,9 +391,12 @@
 				CODE_SIGN_ENTITLEMENTS = "Fyp_WatchDataAPI Watch App/Fyp_WatchDataAPI Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9G3S935XWD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Fyp_WatchDataAPI;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsArbitraryLoads = YES;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need access to your health data to display your workout metrics.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need permission to save your workout data to HealthKit.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
@@ -422,9 +425,12 @@
 				CODE_SIGN_ENTITLEMENTS = "Fyp_WatchDataAPI Watch App/Fyp_WatchDataAPI Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9G3S935XWD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Fyp_WatchDataAPI;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsArbitraryLoads = YES;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need access to your health data to display your workout metrics.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We need permission to save your workout data to HealthKit.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";

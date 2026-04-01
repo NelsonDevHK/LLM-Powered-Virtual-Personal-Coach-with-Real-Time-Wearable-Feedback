@@ -152,23 +152,32 @@ class WorkoutManager: NSObject, ObservableObject {
             return
         }
 
-        let payload: [String: Any] = [
-            "heart_rate": Int(heartRate),
-            "current_speed": 0,
-            "exercise_type": exerciseType,
-            "set_count": setCount,
-            "rest_duration": max(restDuration, 0)
-        ]
+        fetchRecentSleepMetrics { [weak self] sleepDuration, sleepQuality in
+            var payload: [String: Any] = [
+                "heart_rate": Int(self?.heartRate ?? 0),
+                "current_speed": 0,
+                "exercise_type": exerciseType,
+                "set_count": setCount,
+                "rest_duration": max(restDuration, 0)
+            ]
 
-        sendAuthenticatedWatchRequest(path: "/api/watch/in-session-feedback", payload: payload) { success, json, errorMessage in
-            DispatchQueue.main.async {
-                if !success {
-                    completion(false, errorMessage ?? "Failed to fetch feedback")
-                    return
+            if let sleepDuration {
+                payload["sleep_duration"] = sleepDuration
+            }
+            if let sleepQuality {
+                payload["sleep_quality"] = sleepQuality
+            }
+
+            self?.sendAuthenticatedWatchRequest(path: "/api/watch/in-session-feedback", payload: payload) { success, json, errorMessage in
+                DispatchQueue.main.async {
+                    if !success {
+                        completion(false, errorMessage ?? "Failed to fetch feedback")
+                        return
+                    }
+
+                    let suggestion = (json?["suggestion"] as? String) ?? "No suggestion returned"
+                    completion(true, suggestion)
                 }
-
-                let suggestion = (json?["suggestion"] as? String) ?? "No suggestion returned"
-                completion(true, suggestion)
             }
         }
     }
@@ -179,25 +188,89 @@ class WorkoutManager: NSObject, ObservableObject {
             return
         }
 
-        let payload: [String: Any] = [
-            "heart_rate": Int(heartRate),
-            "current_speed": 0,
-            "exercise_type": exerciseType,
-            "set_count": setCount,
-            "rest_duration": max(restDuration, 0)
-        ]
+        fetchRecentSleepMetrics { [weak self] sleepDuration, sleepQuality in
+            var payload: [String: Any] = [
+                "heart_rate": Int(self?.heartRate ?? 0),
+                "current_speed": 0,
+                "exercise_type": exerciseType,
+                "set_count": setCount,
+                "rest_duration": max(restDuration, 0)
+            ]
 
-        sendAuthenticatedWatchRequest(path: "/api/watch/session-end", payload: payload) { success, json, errorMessage in
-            DispatchQueue.main.async {
-                if !success {
-                    completion(false, errorMessage ?? "Failed to save session")
-                    return
+            if let sleepDuration {
+                payload["sleep_duration"] = sleepDuration
+            }
+            if let sleepQuality {
+                payload["sleep_quality"] = sleepQuality
+            }
+
+            self?.sendAuthenticatedWatchRequest(path: "/api/watch/session-end", payload: payload) { success, json, errorMessage in
+                DispatchQueue.main.async {
+                    if !success {
+                        completion(false, errorMessage ?? "Failed to save session")
+                        return
+                    }
+
+                    let message = (json?["message"] as? String) ?? "Session saved"
+                    completion(true, message)
                 }
-
-                let message = (json?["message"] as? String) ?? "Session saved"
-                completion(true, message)
             }
         }
+    }
+
+    private func sleepQualityScore(from durationMinutes: Int) -> Int {
+        switch durationMinutes {
+        case 480...:
+            return 5
+        case 420...:
+            return 4
+        case 360...:
+            return 3
+        case 300...:
+            return 2
+        default:
+            return 1
+        }
+    }
+
+    private func fetchRecentSleepMetrics(completion: @escaping (Int?, Int?) -> Void) {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            completion(nil, nil)
+            return
+        }
+
+        let endDate = Date()
+        let startDate = Calendar.current.date(byAdding: .day, value: -1, to: endDate) ?? endDate.addingTimeInterval(-24 * 60 * 60)
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [.strictStartDate])
+        let sortDescriptors = [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+
+        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: sortDescriptors) { _, samples, _ in
+            guard let categorySamples = samples as? [HKCategorySample], !categorySamples.isEmpty else {
+                completion(nil, nil)
+                return
+            }
+
+            let asleepSamples = categorySamples.filter { sample in
+                sample.value != HKCategoryValueSleepAnalysis.inBed.rawValue
+                    && sample.value != HKCategoryValueSleepAnalysis.awake.rawValue
+            }
+
+            let totalMinutes = Int(
+                asleepSamples.reduce(0.0) { partial, sample in
+                    partial + sample.endDate.timeIntervalSince(sample.startDate) / 60.0
+                }
+                .rounded()
+            )
+
+            guard totalMinutes > 0 else {
+                completion(nil, nil)
+                return
+            }
+
+            completion(totalMinutes, self.sleepQualityScore(from: totalMinutes))
+        }
+
+        healthStore.execute(query)
     }
 
     private func sendAuthenticatedWatchRequest(path: String, payload: [String: Any], completion: @escaping (Bool, [String: Any]?, String?) -> Void) {
@@ -264,6 +337,7 @@ class WorkoutManager: NSObject, ObservableObject {
         let typesToRead: Set<HKObjectType> = [
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
             HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!,
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
             HKObjectType.activitySummaryType()
         ]
         

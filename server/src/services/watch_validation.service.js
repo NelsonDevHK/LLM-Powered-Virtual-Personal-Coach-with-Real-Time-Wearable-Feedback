@@ -108,6 +108,7 @@ class WatchValidationService {
             current_speed: validatedData.current_speed,
             exercise_type: validatedData.exercise_type,
             set_count: validatedData.set_count,
+            sleep_duration: validatedData.sleep_duration,
             rest_duration: validatedData.rest_duration,
             sleep_quality: validatedData.sleep_quality
         };
