@@ -10,6 +10,7 @@ class WorkoutManager: NSObject, ObservableObject {
     @Published var heartRate: Double = 0
     @Published var activeEnergy: Double = 0
     @Published var isBackendPaired: Bool = false
+    @Published var isPairingInProgress: Bool = false
     
     let healthStore = HKHealthStore()
     private let backendBaseURLKey = "watch_backend_base_url"
@@ -27,7 +28,8 @@ class WorkoutManager: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        isBackendPaired = !(currentWatchJWT?.isEmpty ?? true)
+        // Do not assume paired from a stale local token at startup.
+        isBackendPaired = false
     }
 
     var backendBaseURL: String {
@@ -79,6 +81,10 @@ class WorkoutManager: NSObject, ObservableObject {
         UserDefaults.standard.string(forKey: watchJWTKey)
     }
 
+    var hasSavedWatchJWT: Bool {
+        !(currentWatchJWT?.isEmpty ?? true)
+    }
+
     var deviceUUID: String {
         if let existing = UserDefaults.standard.string(forKey: watchDeviceUUIDKey), !existing.isEmpty {
             return existing
@@ -118,9 +124,14 @@ class WorkoutManager: NSObject, ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
 
+        isPairingInProgress = true
+
         URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             DispatchQueue.main.async {
+                self?.isPairingInProgress = false
+
                 if let error = error {
+                    self?.isBackendPaired = false
                     completion(false, "Pairing failed: \(error.localizedDescription)")
                     return
                 }
@@ -140,6 +151,7 @@ class WorkoutManager: NSObject, ObservableObject {
                     return
                 }
 
+                self?.isBackendPaired = false
                 let errorMessage = json["error"] as? String ?? "Pairing failed"
                 completion(false, errorMessage)
             }
@@ -309,6 +321,13 @@ class WorkoutManager: NSObject, ObservableObject {
             }
 
             guard (200...299).contains(http.statusCode) else {
+                if http.statusCode == 401 || http.statusCode == 403 {
+                    UserDefaults.standard.removeObject(forKey: self.watchJWTKey)
+                    DispatchQueue.main.async {
+                        self.isBackendPaired = false
+                    }
+                }
+
                 let errorMessage = json["error"] as? String
                     ?? (json["message"] as? String)
                     ?? ((json["errors"] as? [String])?.joined(separator: "; "))

@@ -69,17 +69,18 @@ struct ContentView: View {
                         TextField("6-digit code", text: $pairingCode)
                             .font(.caption2)
 
-                        Button(workoutManager.isBackendPaired ? "Re-pair Watch" : "Pair Watch") {
+                        Button(workoutManager.isPairingInProgress ? "Pairing..." : (workoutManager.isBackendPaired ? "Re-pair Watch" : "Pair Watch")) {
                             workoutManager.pairWithCode(pairingCode) { success, message in
                                 workoutManager.statusMessage = success ? "✓ \(message)" : "Pairing error: \(message)"
                             }
                         }
                         .buttonStyle(.borderedProminent)
                         .font(.caption2)
+                        .disabled(workoutManager.isPairingInProgress)
 
-                        Text(workoutManager.isBackendPaired ? "Backend: Paired" : "Backend: Not paired")
+                        Text(backendPairingStatusText)
                             .font(.caption2)
-                            .foregroundColor(workoutManager.isBackendPaired ? .green : .orange)
+                            .foregroundColor(backendPairingStatusColor)
                     }
 
                     Divider()
@@ -274,6 +275,34 @@ struct ContentView: View {
         guard let start = phaseStartDate else { return 0 }
         let elapsed = Int(now.timeIntervalSince(start))
         return max(0, elapsed / 60)
+    }
+}
+
+private extension ContentView {
+    var backendPairingStatusText: String {
+        if workoutManager.isPairingInProgress {
+            return "Backend: Pairing in progress"
+        }
+        if workoutManager.isBackendPaired {
+            return "Backend: Paired"
+        }
+        if workoutManager.hasSavedWatchJWT {
+            return "Backend: Saved token (not verified)"
+        }
+        return "Backend: Not paired"
+    }
+
+    var backendPairingStatusColor: Color {
+        if workoutManager.isPairingInProgress {
+            return .blue
+        }
+        if workoutManager.isBackendPaired {
+            return .green
+        }
+        if workoutManager.hasSavedWatchJWT {
+            return .yellow
+        }
+        return .orange
     }
 }
 
