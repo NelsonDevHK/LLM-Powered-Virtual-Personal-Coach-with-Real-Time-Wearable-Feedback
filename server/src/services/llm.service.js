@@ -3,13 +3,11 @@
  * Unified handler for ask endpoint requests
  * - Handles both string questions and message arrays
  * - Manages context assembly, RAG retrieval, prompt building, LLM invocation
- * - Preserves conversation history persistence
  */
 import { getGroupedUserData } from './grouped_user_data.js';
 import { getLLMResponse } from './llm_client.js';
 import { AskPromptBuilder, LlmPromptBuilder } from './prompts/builder.js';
 import user_data from './db.service.js';
-import conversationRepository from '../database/repositories/conversation_repository.js';
 import ragService from './rag.service.js';
 import llmGateService from './llm_gate.service.js';
 import logger from '../utils/logger.js';
@@ -43,16 +41,11 @@ class LlmService {
         const grouped = await this._getGroupedUserData(userId);
         logger.info(`LlmService: Fetched grouped user data for user_id=${userId}`);
 
-        // Step 2: Fetch conversation history
-        const conversationHistory = await this._getConversationHistory(userId);
-        grouped.conversation_history = conversationHistory || [];
-        logger.info(`LlmService: Fetched ${conversationHistory?.length || 0} conversation history items`);
-
-        // Step 3: Extract user query for logging and RAG
+        // Step 2: Extract user query for logging and RAG
         const userQuery = this._extractUserQuery(question, messages);
         logger.info(`LlmService: User query: "${userQuery}"`);
 
-        // Step 4: Fetch RAG advice (context-aware with grouped data)
+        // Step 3: Fetch RAG advice (context-aware with grouped data)
         const ragAdviceArr = await this._fetchRagAdvice(userId, grouped);
         const ragAdvice = ragAdviceArr && ragAdviceArr.length > 0 ? ragAdviceArr : [];
         const ragJoined = ragAdvice.join('\n');
@@ -61,15 +54,15 @@ class LlmService {
           `LlmService: RAG context for user_id=${userId} | count=${ragAdvice.length} | joinedChars=${ragJoined.length} | preview="${ragPreview || 'none'}"`
         );
 
-        // Step 5: Build prompt using AskPromptBuilder
+        // Step 4: Build prompt using AskPromptBuilder
         const prompt = await this._buildAskPrompt(grouped, ragAdvice, messages);
         logger.info(`LlmService: Built ask prompt with ${(ragAdvice || []).length} RAG items`);
 
-        // Step 6: Invoke LLM
+        // Step 5: Invoke LLM
         const llmResponse = await this._invokeLLM(prompt);
         logger.info(`LlmService: LLM response received for user_id=${userId}`);
 
-        // Step 7: Format result
+        // Step 6: Format result
         const result = await this._formatAskResult(llmResponse, userQuery, messages);
         
         return result;
@@ -88,19 +81,6 @@ class LlmService {
     } catch (err) {
       logger.error(`Failed to fetch grouped user data for ${userId}: ${err.message}`);
       throw err;
-    }
-  }
-
-  /**
-   * Private helper: Fetch conversation history
-   * @private
-   */
-  async _getConversationHistory(userId) {
-    try {
-      return await conversationRepository.getConversationHistory(userId);
-    } catch (err) {
-      logger.error(`Failed to fetch conversation history for ${userId}: ${err.message}`);
-      return [];
     }
   }
 

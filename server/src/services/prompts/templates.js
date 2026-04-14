@@ -41,9 +41,6 @@ export const COACH_TEMPLATE = `You are FitCoach, a comprehensive fitness and wel
 RETRIEVED FITNESS KNOWLEDGE:
 {context}
 
-CONVERSATION HISTORY:
-{history}
-
 USER PROFILE:
 Age: {age}
 Fitness Level: {fitness_level}

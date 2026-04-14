@@ -1,6 +1,6 @@
 /**
  * Watch Controller (Phase 1)
- * Handles HTTP requests for rest-feedback and session-end endpoints
+ * Handles HTTP requests for rest-feedback and set-end endpoints
  */
 import watchService from '../services/watch.service.js';
 import watchPairingService from '../services/watch_pairing.service.js';
@@ -161,7 +161,7 @@ class WatchController {
     }
 
     /**
-     * POST /api/watch/session-end
+    * POST /api/watch/set-end
      * End workout session and persist final metrics to DB
      * Only one row is written per complete session
      * @param {Object} req
@@ -180,7 +180,7 @@ class WatchController {
                 });
             }
 
-            logger.info(`Session-end request from user ${userId}`);
+            logger.info(`Set-end request from user ${userId}`);
 
             const result = await watchService.endSession(userId, sessionData);
 
@@ -198,7 +198,7 @@ class WatchController {
                 sessionSummary: result.sessionSummary
             });
         } catch (error) {
-            logger.error(`Session-end controller error: ${error.message}`);
+            logger.error(`Set-end controller error: ${error.message}`);
             next(error);
         }
     }

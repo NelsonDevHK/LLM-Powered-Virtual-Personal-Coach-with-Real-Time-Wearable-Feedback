@@ -5,7 +5,6 @@
 import watchValidationService from './watch_validation.service.js';
 import userRepository from '../database/repositories/user_repository.js';
 import wearableRepository from '../database/repositories/wearable_repository.js';
-import conversationRepository from '../database/repositories/conversation_repository.js';
 import ragService from './rag.service.js';
 import { getLLMResponse } from './llm_client.js';
 import llmGateService from './llm_gate.service.js';
@@ -142,16 +141,14 @@ class WatchService {
         const {
             profile,
             recentSessions,
-            ragAdvice,
-            lastAssistantMessage
+            ragAdvice
         } = sessionContext;
 
         const prompt = this._buildPersonalizedInSessionPrompt({
             metrics: preparedData,
             profile,
             recentSessions,
-            ragAdvice,
-            lastAssistantMessage
+            ragAdvice
         });
 
         let suggestion = null;
@@ -165,19 +162,13 @@ class WatchService {
             suggestion = this._generateFallbackRestSuggestion(preparedData, profile, recentSessions);
         }
 
-        if (this._isTooSimilarSuggestion(suggestion, lastAssistantMessage)) {
-            suggestion = this._generateDiverseFallbackSuggestion(preparedData, profile);
-        }
-
         suggestion = this._trimToSingleSentence(suggestion);
-        this._updateCachedLastAssistantMessage(cacheKey, suggestion);
 
         return {
             success: true,
             suggestion,
             metrics: {
                 heart_rate: preparedData.heart_rate,
-                current_speed: preparedData.current_speed,
                 exercise_type: preparedData.exercise_type,
                 set_count: preparedData.set_count,
                 sleep_duration: preparedData.sleep_duration ?? null,
@@ -279,7 +270,7 @@ class WatchService {
      * @param {Object} metrics 
      * @returns {string}
      */
-    _buildPersonalizedInSessionPrompt({ metrics, profile, recentSessions, ragAdvice, lastAssistantMessage }) {
+    _buildPersonalizedInSessionPrompt({ metrics, profile, recentSessions, ragAdvice }) {
         const recentAvgHeartRate = this._average((recentSessions || []).map((row) => Number(row.heart_rate)).filter(Number.isFinite));
         const recentAvgRest = this._average((recentSessions || []).map((row) => Number(row.rest_duration)).filter(Number.isFinite));
         const inSessionHrHistory = Array.isArray(metrics?.heart_rate_history) ? metrics.heart_rate_history : [];
@@ -309,9 +300,6 @@ Current workout HR history (last 10 readings):
 
 Retrieved advice context:
 ${ragAdvice || 'No RAG context available.'}
-
-Avoid repeating this previous assistant feedback:
-${lastAssistantMessage || 'none'}
 
 Output only the one-sentence feedback.`;
     }
@@ -447,10 +435,9 @@ Output only the one-sentence feedback.`;
             return cached;
         }
 
-        const [profile, recentSessions, lastAssistantMessage] = await Promise.all([
+        const [profile, recentSessions] = await Promise.all([
             userRepository.findProfileForCoaching(userId),
-            wearableRepository.findRecentByUserId(userId, 5),
-            conversationRepository.getLastAssistantMessage(userId)
+            wearableRepository.findRecentByUserId(userId, 5)
         ]);
 
         const groupedUserData = {
@@ -475,20 +462,11 @@ Output only the one-sentence feedback.`;
             profile,
             recentSessions,
             ragAdvice,
-            lastAssistantMessage,
             createdAt: Date.now(),
             expiresAt: Date.now() + SESSION_CONTEXT_TTL_MS
         };
         this.sessionContextCache.set(cacheKey, entry);
         return entry;
-    }
-
-    _updateCachedLastAssistantMessage(cacheKey, message) {
-        const cached = this.sessionContextCache.get(cacheKey);
-        if (!cached) return;
-        cached.lastAssistantMessage = message;
-        cached.expiresAt = Date.now() + SESSION_CONTEXT_TTL_MS;
-        this.sessionContextCache.set(cacheKey, cached);
     }
 
     _clearUserSessionCache(userId) {

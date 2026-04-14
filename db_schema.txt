@@ -25,6 +25,10 @@ SHOW COLUMNS FROM wearable_data;
 | injuries       | text         | YES  |     | NULL              |                   |
 | created_at     | datetime     | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
 +----------------+--------------+------+-----+-------------------+-------------------+
+
+
+
+******************(NO WIRING)******************
 +-----------------+--------------------------+------+-----+-------------------+-------------------+
 | Field           | Type                     | Null | Key | Default           | Extra             |
 +-----------------+--------------------------+------+-----+-------------------+-------------------+
@@ -34,13 +38,18 @@ SHOW COLUMNS FROM wearable_data;
 | session_summary | text                     | NO   |     | NULL              |                   |
 | created_at      | datetime                 | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
 +-----------------+--------------------------+------+-----+-------------------+-------------------+
+******************(NO WIRING)******************
+
+
+
+
+
 +----------------+--------------+------+-----+-------------------+-------------------+
 | Field          | Type         | Null | Key | Default           | Extra             |
 +----------------+--------------+------+-----+-------------------+-------------------+
 | data_id        | int          | NO   | PRI | NULL              | auto_increment    |
 | user_id        | int          | NO   | MUL | NULL              |                   |
 | heart_rate     | int          | NO   |     | NULL              |                   |
-| current_speed  | decimal(5,2) | NO   |     | NULL              |                   |
 | exercise_type  | varchar(50)  | YES  |     | General           |                   |
 | set_count      | int          | YES  |     | 0                 |                   |
 | sleep_duration | int          | YES  |     | NULL              |                   |

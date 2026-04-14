@@ -39,7 +39,7 @@ export class RagPromptBuilder extends PromptBuilder {
 /**
  * AskPromptBuilder - Builds comprehensive fitness coaching prompts for the /api/ask endpoint.
  * Focuses on holistic fitness guidance (cardio, strength, recovery, nutrition, sleep).
- * Incorporates user profile, wearable data, conversation history, and RAG advice.
+ * Incorporates user profile, wearable data, and RAG advice.
  */
 export class AskPromptBuilder extends PromptBuilder {
     async builder(userDict, ragAdvice) {
@@ -57,17 +57,6 @@ export class AskPromptBuilder extends PromptBuilder {
             wearableContext = 'No recent workout data available.';
         }
 
-        // Format conversation history (last 5 messages)
-        let history = '';
-        if (Array.isArray(userDict.conversation_history) && userDict.conversation_history.length > 0) {
-            const lastMsgs = userDict.conversation_history.slice(-5);
-            history = lastMsgs
-                .map((msg, i) => `Q${i+1}: ${msg.question || msg.session_summary}\nA: ${msg.answer || msg.session_summary}`)
-                .join('\n\n');
-        } else {
-            history = 'No previous conversation history.';
-        }
-
         // Format RAG advice context
         const ragContext = (ragAdvice && ragAdvice.length > 0) 
             ? ragAdvice.join('\n\n') 
@@ -78,8 +67,7 @@ export class AskPromptBuilder extends PromptBuilder {
             .replace(/\{age\}/g, String(age))
             .replace(/\{fitness_level\}/g, String(fitnessLevel))
             .replace(/\{heart_rate\}/g, String(heartRate))
-            .replace(/\{context\}/g, ragContext)
-            .replace(/\{history\}/g, history);
+            .replace(/\{context\}/g, ragContext);
 
         // Prepend wearable context for comprehensive coaching context
         return `${wearableContext}\n\n${prompt}`;
@@ -94,8 +82,7 @@ export class LlmPromptBuilder extends PromptBuilder {
             .replace(/\{age\}/g, String(userDict.age ?? "unknown"))
             .replace(/\{fitness_level\}/g, userDict.excercise_level ?? userDict.exercise_level ?? "unknown")
             .replace(/\{heart_rate\}/g, String(userDict.heart_rate ?? "unknown"))
-            .replace(/\{context\}/g, (ragAdvice ?? []).join("\n") || "No advice available")
-            .replace(/\{history\}/g, userDict.conversation_history ?? "No conversation history");
+            .replace(/\{context\}/g, (ragAdvice ?? []).join("\n") || "No advice available");
 
         const extraContext = `\n\nADDITIONAL WEARABLE CONTEXT:\n- Exercise type: ${userDict.exercise_type ?? "unknown"}\n- Set count: ${userDict.set_count ?? "unknown"}\n- Rest duration: ${userDict.rest_duration ?? "unknown"} min\n- Sleep duration: ${userDict.sleep_duration ?? "unknown"} min\n- Sleep quality: ${userDict.sleep_quality ?? "unknown"}/5`;
 

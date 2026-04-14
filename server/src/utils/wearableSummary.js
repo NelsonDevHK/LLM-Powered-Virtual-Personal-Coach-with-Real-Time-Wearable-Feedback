@@ -8,14 +8,12 @@
 export function summarizeWearableData(wearableArr) {
   if (!Array.isArray(wearableArr) || wearableArr.length === 0) return '';
   const hrArr = wearableArr.map(w => Number(w.heart_rate)).filter(n => !isNaN(n));
-  const spArr = wearableArr.map(w => Number(w.current_speed)).filter(n => !isNaN(n));
   const sleepDurationArr = wearableArr.map(w => Number(w.sleep_duration)).filter(n => !isNaN(n));
   const sleepQualityArr = wearableArr.map(w => Number(w.sleep_quality)).filter(n => !isNaN(n));
   const setCountArr = wearableArr.map(w => Number(w.set_count)).filter(n => !isNaN(n));
   const restDurationArr = wearableArr.map(w => Number(w.rest_duration)).filter(n => !isNaN(n));
   if (
     hrArr.length === 0
-    && spArr.length === 0
     && sleepDurationArr.length === 0
     && sleepQualityArr.length === 0
     && setCountArr.length === 0

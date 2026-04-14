@@ -1,4 +1,4 @@
-import { userRepository, wearableRepository, conversationRepository } from "../database/index.js";
+import { userRepository, wearableRepository } from "../database/index.js";
 import logger from '../utils/logger.js';
 
 export class dbService {
@@ -18,7 +18,6 @@ export class dbService {
                 excercise_level: userInfo?.excercise_level ?? userInfo?.exercise_level ?? null,
                 fitness_goal: userInfo?.fitness_goal ?? null,
                 heart_rate: wearableRecord?.heart_rate ?? null,
-                current_speed: wearableRecord?.current_speed ?? wearableRecord?.speed ?? null,
                 sleep_duration: wearableRecord?.sleep_duration ?? null,
                 sleep_quality: wearableRecord?.sleep_quality ?? null,
                 rest_duration: wearableRecord?.rest_duration ?? null,
@@ -39,8 +38,6 @@ export class dbService {
         try {
             const userInfo = await userRepository.findById(userId);
             const wearableData = await wearableRepository.findById(userId);
-            //logger.info(`Fetched wearable data for user_id=${userId}: ${JSON.stringify(wearableData, null, 2)}`);
-            const conversationHistory = await conversationRepository.findById(userId);
             
             // wearableData may be a single record or an array of records — pick the last record if it's an array
             const wearableRecord = Array.isArray(wearableData)
@@ -52,13 +49,11 @@ export class dbService {
                 excercise_level: userInfo?.excercise_level ?? userInfo?.exercise_level ?? null,
                 age: userInfo?.age ?? null,
                 heart_rate: wearableRecord?.heart_rate ?? null,
-                current_speed: wearableRecord?.current_speed ?? wearableRecord?.speed ?? null,
                 sleep_duration: wearableRecord?.sleep_duration ?? null,
                 sleep_quality: wearableRecord?.sleep_quality ?? null,
                 rest_duration: wearableRecord?.rest_duration ?? null,
                 exercise_type: wearableRecord?.exercise_type ?? null,
                 set_count: wearableRecord?.set_count ?? null,
-                conversation_history: conversationHistory?.session_summary ?? [],
             };
 
             //logger.info(`Fetched LLM data for user_id=${userId}: ${JSON.stringify(llmDict, null, 2)}`);
@@ -70,27 +65,6 @@ export class dbService {
         }
     }
 
-    async saveChatMessage(userId, conversationData) {
-        try {
-            // Save the conversation data to the database
-            await conversationRepository.saveChatMessage(userId, conversationData);
-            logger.info(`Saved conversation data for user_id=${userId}`);
-        } catch (error) {
-            logger.error("Error saving conversation data:", error);
-            throw error;
-        }
-    }
-
-    async saveSessionSummary(userId, sessionSummary) {
-        try {
-            // Save the session summary to the database
-            await conversationRepository.saveSessionSummary(userId, sessionSummary);
-            logger.info(`Saved session summary for user_id=${userId}`);
-        } catch (error) {
-            logger.error("Error saving session summary:", error);
-            throw error;
-        }
-    }
     async findUserByUsername(user_name) { // For register Helper function
         try {
             return await userRepository.findByUsername(user_name);
@@ -106,16 +80,6 @@ export class dbService {
         } catch (error) {
             logger.error("Error finding wearable by userId:", error);
             throw error;
-        }
-    }
-    async getConversationHistory(userId) {
-        try {
-            const history = await conversationRepository.findById(userId);
-            // Return session_summary or an array of messages, depending on your schema
-            return history?.session_summary ?? [];
-        } catch (error) {
-            logger.error("Error fetching conversation history:", error);
-            return [];
         }
     }
 }

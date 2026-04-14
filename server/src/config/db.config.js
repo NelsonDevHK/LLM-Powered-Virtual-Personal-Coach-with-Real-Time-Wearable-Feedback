@@ -12,5 +12,4 @@ export const databaseConfig = {
 export const TABLES = {
   USER: process.env.TABLE_USER || 'users',
   WEARABLE_DATA: process.env.TABLE_WEARABLE || 'wearable_data',
-  CONVERSATION_HISTORY: process.env.TABLE_CONVERSATION || 'conversation_history',
 };

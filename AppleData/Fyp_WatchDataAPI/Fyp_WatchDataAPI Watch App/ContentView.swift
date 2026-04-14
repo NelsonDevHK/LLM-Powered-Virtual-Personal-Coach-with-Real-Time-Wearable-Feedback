@@ -181,12 +181,28 @@ struct ContentView: View {
                             }
 
                             Button(action: {
-                                let wasRestPhase = isRestPhase
                                 if isRestPhase {
                                     setCount += 1
+                                    isRestPhase.toggle()
+                                    phaseStartDate = Date()
+                                } else {
+                                    let setMinutes = currentPhaseElapsedMinutes
+                                    workoutManager.sendSessionEnd(
+                                        exerciseType: selectedExerciseType.rawValue,
+                                        setCount: setCount,
+                                        restDuration: setMinutes
+                                    ) { success, message in
+                                        workoutManager.statusMessage = success
+                                            ? "✓ \(message)"
+                                            : "Session save error: \(message)"
+
+                                        if success {
+                                            workoutManager.clearWorkoutHeartRateReadings()
+                                            isRestPhase = true
+                                            phaseStartDate = Date()
+                                        }
+                                    }
                                 }
-                                isRestPhase.toggle()
-                                phaseStartDate = Date()
                             }) {
                                 Text(isRestPhase ? "Start Set" : "Start Rest")
                                     .font(.caption2)

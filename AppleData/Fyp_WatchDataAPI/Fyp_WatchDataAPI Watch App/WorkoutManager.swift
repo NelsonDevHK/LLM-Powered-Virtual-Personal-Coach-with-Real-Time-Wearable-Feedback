@@ -205,9 +205,9 @@ class WorkoutManager: NSObject, ObservableObject {
         }
 
         fetchRecentSleepMetrics { [weak self] sleepDuration, sleepQuality in
-            // Calculate average HR from the entire workout
+            // Persist the workout-wide average HR for this set record.
             let avgHeartRate = self?.calculateAverageHeartRate() ?? 0
-            
+
             var payload: [String: Any] = [
                 "heart_rate": Int(avgHeartRate),
                 "current_speed": 0,
@@ -223,7 +223,7 @@ class WorkoutManager: NSObject, ObservableObject {
                 payload["sleep_quality"] = sleepQuality
             }
 
-            self?.sendAuthenticatedWatchRequest(path: "/api/watch/session-end", payload: payload) { success, json, errorMessage in
+            self?.sendAuthenticatedWatchRequest(path: "/api/watch/set-end", payload: payload) { success, json, errorMessage in
                 DispatchQueue.main.async {
                     if !success {
                         completion(false, errorMessage ?? "Failed to save session")
@@ -256,6 +256,10 @@ class WorkoutManager: NSObject, ObservableObject {
         guard !workoutHeartRateReadings.isEmpty else { return 0 }
         let sum = workoutHeartRateReadings.reduce(0, +)
         return sum / Double(workoutHeartRateReadings.count)
+    }
+
+    func clearWorkoutHeartRateReadings() {
+        workoutHeartRateReadings.removeAll()
     }
 
     private func lastHeartRateReadings(limit: Int) -> [Double] {

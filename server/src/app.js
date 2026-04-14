@@ -109,22 +109,6 @@ app.post('/api/ask', authenticateJWT, async (req, res) => {
     const userId = req.user.user_id;
     const llmResult = await llmService.getResponse(userId, { question, messages });
 
-    if (llmResult?.userMessage) {
-      await dbService.saveChatMessage(userId, {
-        session_summary: llmResult.userMessage,
-        role: 'user',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    if (llmResult?.response) {
-      await dbService.saveChatMessage(userId, {
-        session_summary: llmResult.response,
-        role: 'assistant',
-        timestamp: new Date().toISOString(),
-      });
-    }
-
     return res.json({ result: llmResult?.response || '' });
   } catch (err) {
     logger.error('Ask route error:', err?.response?.data || err?.message || err);
