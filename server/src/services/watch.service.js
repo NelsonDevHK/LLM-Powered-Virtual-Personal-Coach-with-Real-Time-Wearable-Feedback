@@ -282,6 +282,7 @@ class WatchService {
     _buildPersonalizedInSessionPrompt({ metrics, profile, recentSessions, ragAdvice, lastAssistantMessage }) {
         const recentAvgHeartRate = this._average((recentSessions || []).map((row) => Number(row.heart_rate)).filter(Number.isFinite));
         const recentAvgRest = this._average((recentSessions || []).map((row) => Number(row.rest_duration)).filter(Number.isFinite));
+        const inSessionHrHistory = Array.isArray(metrics?.heart_rate_history) ? metrics.heart_rate_history : [];
 
         return `You are a real-time watch workout coach. Return exactly one short sentence (max 22 words), direct and actionable.
 
@@ -302,6 +303,9 @@ Recent history trend:
 - Recent sessions analyzed: ${(recentSessions || []).length}
 - Avg recent heart rate: ${recentAvgHeartRate ?? 'unknown'}
 - Avg recent rest duration: ${recentAvgRest ?? 'unknown'}
+
+Current workout HR history (last 10 readings):
+- HR readings: ${inSessionHrHistory.length > 0 ? inSessionHrHistory.join(' → ') : 'no recent readings available'}
 
 Retrieved advice context:
 ${ragAdvice || 'No RAG context available.'}

@@ -25,6 +25,9 @@ class WorkoutManager: NSObject, ObservableObject {
     
     var workoutSession: HKWorkoutSession?
     var builder: HKLiveWorkoutBuilder?
+    
+    // Track all heart rate readings during workout for average calculation
+    private var workoutHeartRateReadings: [Double] = []
 
     override init() {
         super.init()
@@ -167,6 +170,7 @@ class WorkoutManager: NSObject, ObservableObject {
         fetchRecentSleepMetrics { [weak self] sleepDuration, sleepQuality in
             var payload: [String: Any] = [
                 "heart_rate": Int(self?.heartRate ?? 0),
+                "heart_rate_history": self?.lastHeartRateReadings(limit: 10) ?? [],
                 "current_speed": 0,
                 "exercise_type": exerciseType,
                 "set_count": setCount,
@@ -201,8 +205,11 @@ class WorkoutManager: NSObject, ObservableObject {
         }
 
         fetchRecentSleepMetrics { [weak self] sleepDuration, sleepQuality in
+            // Calculate average HR from the entire workout
+            let avgHeartRate = self?.calculateAverageHeartRate() ?? 0
+            
             var payload: [String: Any] = [
-                "heart_rate": Int(self?.heartRate ?? 0),
+                "heart_rate": Int(avgHeartRate),
                 "current_speed": 0,
                 "exercise_type": exerciseType,
                 "set_count": setCount,
@@ -243,6 +250,17 @@ class WorkoutManager: NSObject, ObservableObject {
         default:
             return 1
         }
+    }
+
+    private func calculateAverageHeartRate() -> Double {
+        guard !workoutHeartRateReadings.isEmpty else { return 0 }
+        let sum = workoutHeartRateReadings.reduce(0, +)
+        return sum / Double(workoutHeartRateReadings.count)
+    }
+
+    private func lastHeartRateReadings(limit: Int) -> [Double] {
+        guard limit > 0, !workoutHeartRateReadings.isEmpty else { return [] }
+        return Array(workoutHeartRateReadings.suffix(limit))
     }
 
     private func fetchRecentSleepMetrics(completion: @escaping (Int?, Int?) -> Void) {
@@ -385,6 +403,9 @@ class WorkoutManager: NSObject, ObservableObject {
             return
         }
         
+        // Reset HR readings for new workout
+        workoutHeartRateReadings = []
+        
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .running
         configuration.locationType = .outdoor
@@ -487,7 +508,12 @@ extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
             DispatchQueue.main.async {
                 switch quantityType {
                 case HKQuantityType.quantityType(forIdentifier: .heartRate):
-                    self.heartRate = statistics?.mostRecentQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: .minute())) ?? 0
+                    let currentHR = statistics?.mostRecentQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: .minute())) ?? 0
+                    self.heartRate = currentHR
+                    // Append to readings array for averaging and trend context
+                    if currentHR > 0 {
+                        self.workoutHeartRateReadings.append(currentHR)
+                    }
                 case HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned):
                     self.activeEnergy = statistics?.sumQuantity()?.doubleValue(for: HKUnit.kilocalorie()) ?? 0
                 default:

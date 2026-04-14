@@ -1,6 +1,5 @@
 import { summarizeWearableData } from "../../utils/wearableSummary.js";
-import { RAG_TEMPLATE } from "./templates.js";
-import { COACH_TEMPLATE } from "./templates.js";
+import { RAG_TEMPLATE, COACH_TEMPLATE } from "./templates.js";
 import logger from "../../utils/logger.js";
 
 
@@ -11,13 +10,13 @@ export class PromptBuilder {
     }
 }
 
-// RAG prompt builder - returns a filled prompt string using RAG_TEMPLATE
 /**
- * {param {Dictionary} userDict  - data of the user for whom to build the prompt}
+ * RagPromptBuilder - Retrieves fitness knowledge relevant to user profile and context.
+ * Builds RAG retrieval query using RAG_TEMPLATE for Chroma semantic search.
  */
 export class RagPromptBuilder extends PromptBuilder {
     async builder(userDict) {
-        logger.info(`RagPromptBuilder.builder: Building prompt for user data: ${JSON.stringify(userDict, null, 2)}`);
+        logger.info(`RagPromptBuilder.builder: Building RAG query for user data: ${JSON.stringify(userDict, null, 2)}`);
         // Summarize wearable data
         let wearableSummary = '';
         if (Array.isArray(userDict.wearable_data)) {
@@ -26,19 +25,64 @@ export class RagPromptBuilder extends PromptBuilder {
             wearableSummary = summarizeWearableData([userDict.wearable_data]);
         }
 
+        // Fill RAG_TEMPLATE with user profile and wearable context
+        const prompt = RAG_TEMPLATE
+            .replace(/\{gender\}/g, userDict.gender ?? 'unknown')
+            .replace(/\{age_group\}/g, userDict.age_group ?? 'unknown')
+            .replace(/\{exercise_level\}/g, userDict.exercise_level ?? userDict.excercise_level ?? 'unknown')
+            .replace(/\{wearable_summary\}/g, wearableSummary || 'General fitness inquiry');
+
+        return prompt;
+    }
+}
+
+/**
+ * AskPromptBuilder - Builds comprehensive fitness coaching prompts for the /api/ask endpoint.
+ * Focuses on holistic fitness guidance (cardio, strength, recovery, nutrition, sleep).
+ * Incorporates user profile, wearable data, conversation history, and RAG advice.
+ */
+export class AskPromptBuilder extends PromptBuilder {
+    async builder(userDict, ragAdvice) {
+        // Safely extract user profile fields
+        const age = userDict.age ?? userDict.age_group ?? "unknown";
+        const fitnessLevel = userDict.exercise_level ?? userDict.excercise_level ?? "unknown";
+        const heartRate = userDict.heart_rate ?? "unknown";
+        
+        // Build wearable context summary from recent data
+        let wearableContext = '';
+        if (Array.isArray(userDict.wearable_data) && userDict.wearable_data.length > 0) {
+            const latest = userDict.wearable_data[0];
+            wearableContext = `Recent Workout Summary:\n- Activity: ${latest.exercise_type ?? 'unknown'}\n- Duration: ${latest.duration ?? 'unknown'} min\n- Avg Heart Rate: ${latest.average_heart_rate ?? 'unknown'} bpm\n- Calories: ${latest.calories ?? 'unknown'}\n- Sleep: ${latest.sleep_duration ?? 'unknown'} hrs (quality: ${latest.sleep_quality ?? 'unknown'}/5)`;
+        } else {
+            wearableContext = 'No recent workout data available.';
+        }
+
         // Format conversation history (last 5 messages)
         let history = '';
         if (Array.isArray(userDict.conversation_history) && userDict.conversation_history.length > 0) {
             const lastMsgs = userDict.conversation_history.slice(-5);
-            history = lastMsgs.map((msg, i) => `#${i+1}: Q: ${msg.question}\nA: ${msg.answer}`).join('\n');
+            history = lastMsgs
+                .map((msg, i) => `Q${i+1}: ${msg.question || msg.session_summary}\nA: ${msg.answer || msg.session_summary}`)
+                .join('\n\n');
         } else {
-            history = 'No conversation history.';
+            history = 'No previous conversation history.';
         }
 
-        // Explicit, instructional prompt
-        let prompt = `User Profile:\n- Gender: ${userDict.gender 
-            ?? 'unknown'}\n- Age group: ${userDict.age_group ?? 'unknown'}\n- Exercise level: ${userDict.excercise_level ?? userDict.exercise_level ?? 'unknown'}\n\nWorkout Summary:\n- ${wearableSummary || 'No recent workout data.'}\n\nConversation History:\n${history}\n\nInstructions:\nProvide running advice that is specific to this user’s profile and workout data. Reference the user’s age group, gender, and exercise level. Do not give generic advice—make your answer actionable and personalized.`;
-        return prompt;
+        // Format RAG advice context
+        const ragContext = (ragAdvice && ragAdvice.length > 0) 
+            ? ragAdvice.join('\n\n') 
+            : 'No fitness knowledge base matches found.';
+
+        // Fill COACH_TEMPLATE with user and context data
+        const prompt = COACH_TEMPLATE
+            .replace(/\{age\}/g, String(age))
+            .replace(/\{fitness_level\}/g, String(fitnessLevel))
+            .replace(/\{heart_rate\}/g, String(heartRate))
+            .replace(/\{context\}/g, ragContext)
+            .replace(/\{history\}/g, history);
+
+        // Prepend wearable context for comprehensive coaching context
+        return `${wearableContext}\n\n${prompt}`;
     }
 }
 
@@ -48,7 +92,7 @@ export class LlmPromptBuilder extends PromptBuilder {
         // In a real implementation, you would likely want to use a more sophisticated template.
         const prompt =  COACH_TEMPLATE
             .replace(/\{age\}/g, String(userDict.age ?? "unknown"))
-            .replace(/\{excercise_level\}/g, userDict.excercise_level ?? "unknown")
+            .replace(/\{fitness_level\}/g, userDict.excercise_level ?? userDict.exercise_level ?? "unknown")
             .replace(/\{heart_rate\}/g, String(userDict.heart_rate ?? "unknown"))
             .replace(/\{context\}/g, (ragAdvice ?? []).join("\n") || "No advice available")
             .replace(/\{history\}/g, userDict.conversation_history ?? "No conversation history");
@@ -65,12 +109,12 @@ export class LlmPromptBuilder extends PromptBuilder {
 
 User profile:
 - Age: ${userDict.age ?? 'unknown'}
-- Exercise level: ${userDict.excercise_level ?? 'unknown'}
+- Fitness level: ${userDict.excercise_level ?? userDict.exercise_level ?? 'unknown'}
 
 Latest wearable metrics:
 - Heart rate: ${userDict.heart_rate ?? 'unknown'} bpm
 - Exercise type: ${userDict.exercise_type ?? 'unknown'}
-- Set count: ${userDict.set_count ?? 'unknown'}
+- Duration: ${userDict.duration ?? 'unknown'} min
 - Rest duration: ${userDict.rest_duration ?? 'unknown'} min
 - Sleep duration: ${userDict.sleep_duration ?? 'unknown'} min
 - Sleep quality: ${userDict.sleep_quality ?? 'unknown'}/5

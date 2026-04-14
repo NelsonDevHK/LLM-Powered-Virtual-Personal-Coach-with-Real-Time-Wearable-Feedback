@@ -27,6 +27,20 @@ class WatchValidationService {
             validatedData.heart_rate = Math.round(payload.heart_rate);
         }
 
+        if (payload.heart_rate_history !== undefined) {
+            if (!Array.isArray(payload.heart_rate_history)) {
+                errors.push('heart_rate_history must be an array of numbers');
+            } else {
+                const cleanedHistory = payload.heart_rate_history
+                    .map((value) => Number(value))
+                    .filter((value) => Number.isFinite(value) && value >= 0)
+                    .map((value) => Math.round(value));
+                validatedData.heart_rate_history = cleanedHistory.slice(-10);
+            }
+        } else {
+            validatedData.heart_rate_history = [];
+        }
+
         if (typeof payload.current_speed !== 'number' || payload.current_speed < 0) {
             errors.push('current_speed is required and must be a non-negative number');
         } else {
@@ -105,6 +119,7 @@ class WatchValidationService {
         return {
             user_id: validatedData.user_id,
             heart_rate: validatedData.heart_rate,
+            heart_rate_history: validatedData.heart_rate_history,
             current_speed: validatedData.current_speed,
             exercise_type: validatedData.exercise_type,
             set_count: validatedData.set_count,
@@ -122,6 +137,7 @@ class WatchValidationService {
     prepareForSessionEnd(validatedData) {
         return {
             heart_rate: validatedData.heart_rate,
+            heart_rate_history: validatedData.heart_rate_history,
             current_speed: validatedData.current_speed,
             exercise_type: validatedData.exercise_type,
             set_count: validatedData.set_count,
