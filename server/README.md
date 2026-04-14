@@ -35,6 +35,12 @@ node src/server.js
 
 
 
+## Endpoint Comparison
+
+Legacy vs current endpoint design:
+
+![Differences Table](./endpoint-differences-table.png)
+
 ## test
 
 ```bash

@@ -1,41 +1,189 @@
-// src/services/llm.service.js
+/**
+ * LLM Service - Handles all interactions with the LLM for both coaching and session summaries
+ * Unified handler for ask endpoint requests
+ * - Handles both string questions and message arrays
+ * - Manages context assembly, RAG retrieval, prompt building, LLM invocation
+ * - Preserves conversation history persistence
+ */
+import { getGroupedUserData } from './grouped_user_data.js';
 import { getLLMResponse } from './llm_client.js';
-import { LlmPromptBuilder } from './prompts/builder.js';
+import { AskPromptBuilder, LlmPromptBuilder } from './prompts/builder.js';
 import user_data from './db.service.js';
-import ragService from './rag.service.js'; // 依賴 RagService
+import conversationRepository from '../database/repositories/conversation_repository.js';
+import ragService from './rag.service.js';
 import llmGateService from './llm_gate.service.js';
 import logger from '../utils/logger.js';
 
 const LLM_MIN_INTERVAL_MS = Number(process.env.LLM_MIN_INTERVAL_MS || 1200);
+const ASK_MIN_INTERVAL_MS = Number(process.env.ASK_MIN_INTERVAL_MS || 1500);
 
 class LlmService {
-  async getResponse(userId) {
+  /**
+   * Canonical ask endpoint handler
+   * @param {number} userId
+   * @param {Object} options
+   * @param {string} options.question - Plain text question (alternative to messages)
+   * @param {Array} options.messages - OpenAI-style messages array (alternative to question)
+   * @returns {Promise<Object>} { response: llmResponse, userMessage: string, wasMessage: boolean }
+   */
+  async getResponse(userId, options = {}) {
+    const { question, messages } = options;
+    
+    if (!question && !messages) {
+      throw new Error('Either "question" (string) or "messages" (array) must be provided');
+    }
+
     return llmGateService.runExclusive(
       userId,
-      'llm-response',
+      'ask-route',
       async () => {
-        logger.info(`LlmService: Processing response for user_id=${userId}`);
+        logger.info(`LlmService.getResponse: Processing ask for user_id=${userId}`);
 
-        // 1. Get User Data
-        const userDict = await user_data.getLlmData(userId);
+        // Step 1: Fetch grouped user data (full wearable history)
+        const grouped = await this._getGroupedUserData(userId);
+        logger.info(`LlmService: Fetched grouped user data for user_id=${userId}`);
 
-        // 2. Get RAG Context (skip gate to avoid nested lock deadlock)
-        const ragContents = await ragService.getAdviceContent(userId, null, { useGate: false });
+        // Step 2: Fetch conversation history
+        const conversationHistory = await this._getConversationHistory(userId);
+        grouped.conversation_history = conversationHistory || [];
+        logger.info(`LlmService: Fetched ${conversationHistory?.length || 0} conversation history items`);
 
-        // 3. Build Prompt
-        const promptBuilder = new LlmPromptBuilder();
-        const prompt = await promptBuilder.builder(userDict, ragContents);
-        logger.info(`LlmService: Built prompt for user_id=${userId}: ${prompt}`);
+        // Step 3: Extract user query for logging and RAG
+        const userQuery = this._extractUserQuery(question, messages);
+        logger.info(`LlmService: User query: "${userQuery}"`);
 
-        // 4. Call LLM
-        const llmResponse = await getLLMResponse(prompt);
+        // Step 4: Fetch RAG advice (context-aware with grouped data)
+        const ragAdviceArr = await this._fetchRagAdvice(userId, grouped);
+        const ragAdvice = ragAdviceArr && ragAdviceArr.length > 0 ? ragAdviceArr : [];
+        logger.info(`LlmService: Retrieved ${ragAdvice.length} RAG advice items`);
 
-        return { response: llmResponse };
+        // Step 5: Build prompt using AskPromptBuilder
+        const prompt = await this._buildAskPrompt(grouped, ragAdvice, messages);
+        logger.info(`LlmService: Built ask prompt with ${(ragAdvice || []).length} RAG items`);
+
+        // Step 6: Invoke LLM
+        const llmResponse = await this._invokeLLM(prompt);
+        logger.info(`LlmService: LLM response received for user_id=${userId}`);
+
+        // Step 7: Format result
+        const result = await this._formatAskResult(llmResponse, userQuery, messages);
+        
+        return result;
       },
-      { minIntervalMs: LLM_MIN_INTERVAL_MS }
+      { minIntervalMs: ASK_MIN_INTERVAL_MS }
     );
   }
 
+  /**
+   * Private helper: Fetch grouped user data with full wearable history
+   * @private
+   */
+  async _getGroupedUserData(userId) {
+    try {
+      return await getGroupedUserData(userId);
+    } catch (err) {
+      logger.error(`Failed to fetch grouped user data for ${userId}: ${err.message}`);
+      throw err;
+    }
+  }
+
+  /**
+   * Private helper: Fetch conversation history
+   * @private
+   */
+  async _getConversationHistory(userId) {
+    try {
+      return await conversationRepository.getConversationHistory(userId);
+    } catch (err) {
+      logger.error(`Failed to fetch conversation history for ${userId}: ${err.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Private helper: Extract user query from either question or messages
+   * @private
+   */
+  _extractUserQuery(question, messages) {
+    if (question) {
+      return question;
+    }
+    if (Array.isArray(messages) && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      return lastMsg.content || '';
+    }
+    return '';
+  }
+
+  /**
+   * Private helper: Fetch RAG advice with context-aware grouped data
+   * @private
+   */
+  async _fetchRagAdvice(userId, groupedUserData) {
+    try {
+      const ragAdviceArr = await ragService.getAdviceContent(userId, groupedUserData, { useGate: false });
+      return ragAdviceArr || [];
+    } catch (err) {
+      logger.warn(`RAG lookup failed for user ${userId}: ${err.message}`);
+      return [];
+    }
+  }
+
+  /**
+   * Private helper: Build ask prompt using AskPromptBuilder
+   * @private
+   */
+  async _buildAskPrompt(groupedUserData, ragAdvice, messagesMode) {
+    try {
+      const promptBuilder = new AskPromptBuilder();
+      
+      if (messagesMode) {
+        // For messages mode: just build coaching prompt, don't include in messages array
+        const prompt = await promptBuilder.builder(groupedUserData, ragAdvice);
+        return prompt;
+      } else {
+        // For question mode: same prompt
+        const prompt = await promptBuilder.builder(groupedUserData, ragAdvice);
+        return prompt;
+      }
+    } catch (err) {
+      logger.error(`Failed to build ask prompt: ${err.message}`);
+      throw err;
+    }
+  }
+
+  /**
+   * Private helper: Invoke LLM with string or messages
+   * @private
+   */
+  async _invokeLLM(input) {
+    try {
+      const response = await getLLMResponse(input);
+      return response;
+    } catch (err) {
+      logger.error(`LLM invocation failed: ${err.message}`);
+      throw err;
+    }
+  }
+
+  /**
+   * Private helper: Format ask result with message info for persistence
+   * @private
+   */
+  async _formatAskResult(llmResponse, userQuery, messagesMode) {
+    return {
+      response: llmResponse,
+      userMessage: userQuery,
+      wasMessagesMode: Array.isArray(messagesMode)
+    };
+  }
+
+  /**
+    * Legacy session summary helper
+    * Note: legacy /api/llm/fullLLM route has been removed.
+    * Kept temporarily for backward compatibility at service layer.
+   * @param {number} userId
+   */
   async getSessionSummary(userId) {
     return llmGateService.runExclusive(
       userId,
@@ -43,13 +191,13 @@ class LlmService {
       async () => {
         logger.info(`LlmService: Processing session summary for user_id=${userId}`);
 
-        // 1. Get User Data
+        // 1. Get User Data (old path - single wearable record)
         const userDict = await user_data.getLlmData(userId);
 
         // 2. Build Prompt for Session Summary
-        const promptBuilder = new LlmPromptBuilder(); // need add the new summary prompt builder method in the builder.js
+        const promptBuilder = new LlmPromptBuilder();
         const prompt = await promptBuilder.buildSessionSummaryPrompt(userDict);
-        logger.info(`LlmService: Built session summary prompt for user_id=${userId}: ${prompt}`);
+        logger.info(`LlmService: Built session summary prompt for user_id=${userId}`);
 
         // 3. Call LLM for Session Summary
         const llmResponse = await getLLMResponse(prompt);

@@ -1,7 +1,7 @@
 import { authenticateJWT } from './middleware/authenticateJWT.js';
 import { getGroupedUserData } from './services/grouped_user_data.js';
-import ragService from './services/rag.service.js';
 import dbService from './services/db.service.js';
+import llmService from './services/llm.service.js';
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
@@ -9,10 +9,6 @@ import jwt from 'jsonwebtoken';
 import routes from './routes/index.js';
 import logger from './utils/logger.js';
 import { db } from './database/index.js';
-import { getLLMResponse } from './services/llm_client.js';
-import llmGateService from './services/llm_gate.service.js';
-
-const ASK_MIN_INTERVAL_MS = Number(process.env.ASK_MIN_INTERVAL_MS || 1500);
 
 const app = express();
 
@@ -110,65 +106,26 @@ app.post('/api/ask', authenticateJWT, async (req, res) => {
       return res.status(400).json({ error: 'Missing "question" (string) or "messages" (array).' });
     }
 
-    // Get user_id from JWT
-    const user_id = req.user.user_id;
-    const result = await llmGateService.runExclusive(
-      user_id,
-      'ask-route',
-      async () => {
-        // Fetch grouped user data
-        const grouped = await getGroupedUserData(user_id);
+    const userId = req.user.user_id;
+    const llmResult = await llmService.getResponse(userId, { question, messages });
 
-        // Fetch conversation history for this user
-        const conversationHistory = await dbService.getConversationHistory(user_id);
-        grouped.conversation_history = conversationHistory || [];
+    if (llmResult?.userMessage) {
+      await dbService.saveChatMessage(userId, {
+        session_summary: llmResult.userMessage,
+        role: 'user',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-        // Query RAG for relevant advice, passing groupedUserData (with history) for context-aware retrieval
-        const userMsg = Array.isArray(messages) && messages.length > 0
-          ? messages[messages.length - 1].content
-          : (question || '');
-        const ragAdviceArr = await ragService.getAdviceContent(user_id, grouped, { useGate: false });
-        const ragAdvice = ragAdviceArr && ragAdviceArr.length > 0 ? ragAdviceArr.join('\n') : '';
+    if (llmResult?.response) {
+      await dbService.saveChatMessage(userId, {
+        session_summary: llmResult.response,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-        // Format context for LLM
-        const context = `User: ${grouped.gender}, Age group: ${grouped.age_group}, Level: ${grouped.exercise_level}, Wearable: ${JSON.stringify(grouped.wearable_data)}\nRelevant advice: ${ragAdvice}`;
-        // Prepend context to prompt/messages
-        let input;
-        if (Array.isArray(messages)) {
-          input = [
-            { role: 'system', content: context },
-            ...messages
-          ];
-        } else {
-          input = `${context}\n${question}`;
-        }
-        logger.info('LLM input context:', JSON.stringify(input, null, 2));
-        const llmResult = await getLLMResponse(input);
-
-        // Save the conversation message to history
-        // Save user message
-        if (question || userMsg) {
-          await dbService.saveChatMessage(user_id, {
-            session_summary: question || userMsg,
-            role: 'user',
-            timestamp: new Date().toISOString(),
-          });
-        }
-        // Save assistant (LLM) response
-        if (llmResult) {
-          await dbService.saveChatMessage(user_id, {
-            session_summary: llmResult,
-            role: 'assistant',
-            timestamp: new Date().toISOString(),
-          });
-        }
-
-        return llmResult;
-      },
-      { minIntervalMs: ASK_MIN_INTERVAL_MS }
-    );
-
-    return res.json({ result });
+    return res.json({ result: llmResult?.response || '' });
   } catch (err) {
     logger.error('Ask route error:', err?.response?.data || err?.message || err);
     return res.status(err?.status || err?.statusCode || 500).json({ error: err?.message || 'Unknown error' });
