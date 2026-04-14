@@ -1,52 +1,112 @@
 [
   {
-    "id": "hr_high_beginner",
-    "content": "初学者心率超过170bpm时：立即减速至快走，采用'鼻吸口呼'呼吸法（2步吸气/2步呼气），待心率降至140以下再恢复慢跑。这是身体适应期的正常信号，切勿强行坚持。",
+    "id": "hr_high_beginner_strength",
+    "content": "If a beginner's heart rate stays above 170 bpm during strength work, extend rest by 30-60 seconds, reduce load, and focus on controlled breathing before the next set.",
     "metadata": {
-      "running_level": ["beginner"],
+      "fitness_level": ["beginner"],
       "heart_rate_zone": "high",
-      "scenario": "during_run",
+      "activity_type": "strength",
+      "scenario": "in_session",
       "focus": "heart_rate_management"
     }
   },
   {
-    "id": "recovery_24h",
-    "content": "高强度跑步后24小时内：进行10分钟低强度动态拉伸（高抬腿/弓步走），补充每公斤体重0.3g蛋白质（如60kg跑者需18g），睡眠保证7小时以上。避免连续两天高强度训练。",
+    "id": "hr_moderate_cardio_base",
+    "content": "For base cardio sessions, keep effort in a moderate heart-rate zone where speaking short sentences is possible. If breathing becomes too hard, reduce pace for 2-3 minutes.",
     "metadata": {
-      "running_level": ["beginner", "intermediate"],
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "moderate",
+      "activity_type": "cardio",
+      "scenario": "in_session",
+      "focus": "intensity_control"
+    }
+  },
+  {
+    "id": "sleep_low_reduce_intensity",
+    "content": "After poor sleep (under 6 hours or low sleep quality), reduce workout intensity by 10-20 percent and prioritize movement quality over volume.",
+    "metadata": {
+      "fitness_level": ["any"],
       "heart_rate_zone": "any",
-      "scenario": "post_run",
+      "activity_type": "any",
+      "scenario": "planning",
+      "focus": "sleep_recovery"
+    }
+  },
+  {
+    "id": "sleep_good_progression",
+    "content": "When sleep is consistently good, progress training gradually: add one extra set or 2-5 percent load, but avoid increasing both volume and intensity in the same session.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate", "advanced"],
+      "heart_rate_zone": "any",
+      "activity_type": "any",
+      "scenario": "planning",
+      "focus": "progressive_overload"
+    }
+  },
+  {
+    "id": "post_workout_recovery_24h",
+    "content": "Within 24 hours after a hard session, include light mobility for 10 minutes, hydrate regularly, and consume protein with balanced carbs to support recovery.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "any",
+      "scenario": "post_session",
       "focus": "recovery"
     }
   },
   {
-    "id": "pace_beginner_5k",
-    "content": "初学者5公里配速建议：采用'跑1分钟+走1分钟'间歇法，目标配速8:00-10:00/公里。重点不是速度而是完成全程，心率控制在（220-年龄）×60%~70%区间。",
+    "id": "rest_interval_strength",
+    "content": "For strength training, use 45-90 seconds rest for moderate hypertrophy sets and 2-3 minutes for heavy sets. Keep rest long enough to maintain good form quality.",
     "metadata": {
-      "running_level": ["beginner"],
-      "heart_rate_zone": "moderate",
-      "scenario": "planning",
-      "focus": "pace_strategy"
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "in_session",
+      "focus": "rest_strategy"
     }
   },
   {
-    "id": "hydration_hot",
-    "content": "气温>30°C跑步时：每20分钟补水150ml（含电解质），避免一次性大量饮水。如出现头晕/恶心，立即停止运动并到阴凉处休息。建议选择清晨/傍晚时段训练。",
+    "id": "hydration_heat_general",
+    "content": "In hot conditions, sip water regularly during training. If dizziness, nausea, or unusual fatigue appears, stop and cool down before deciding whether to continue.",
     "metadata": {
-      "running_level": ["any"],
+      "fitness_level": ["any"],
       "heart_rate_zone": "any",
-      "scenario": "during_run",
+      "activity_type": "any",
+      "scenario": "in_session",
       "focus": "hydration"
     }
   },
   {
-    "id": "knee_pain_form",
-    "content": "跑步时膝盖疼痛：检查跑姿是否'过度跨步'（脚落地点应在臀部正下方），尝试缩短步幅10%并提高步频至170+步/分钟。疼痛持续超过2天需就医排查髂胫束综合征。",
+    "id": "form_before_load",
+    "content": "Prioritize technique over load: if movement form breaks down, reduce weight or speed immediately. Consistent form lowers injury risk and improves long-term progress.",
     "metadata": {
-      "running_level": ["intermediate", "advanced"],
+      "fitness_level": ["any"],
       "heart_rate_zone": "any",
-      "scenario": "during_run",
+      "activity_type": "any",
+      "scenario": "in_session",
       "focus": "injury_prevention"
+    }
+  },
+  {
+    "id": "deload_signal",
+    "content": "If heart rate is unusually high for normal effort across multiple sessions and sleep quality drops, schedule a lighter week to recover before pushing intensity again.",
+    "metadata": {
+      "fitness_level": ["intermediate", "advanced"],
+      "heart_rate_zone": "high",
+      "activity_type": "any",
+      "scenario": "planning",
+      "focus": "fatigue_management"
+    }
+  },
+  {
+    "id": "session_end_reflection",
+    "content": "After each workout, note heart rate response, perceived effort, and sleep status. Use these trends to adjust the next session's volume, intensity, and rest intervals.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "any",
+      "scenario": "post_session",
+      "focus": "self_monitoring"
     }
   }
 ]

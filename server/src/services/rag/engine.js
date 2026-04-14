@@ -38,13 +38,11 @@ async initialize() {
 
     await this.loadAndStoreAdvice();
   } catch (err) {
-  console.error('RAW RAG init error:', err);   // add this line
-  logger.error(
-    'Error initializing RAG Engine:',
-    err?.response?.data || err?.message || err
-  );
-  throw new Error('Failed to initialize RAG Engine');
-}
+    logger.error(
+      `RAG init error: ${err?.response?.data || err?.message || err}`
+    );
+    throw new Error('Failed to initialize RAG Engine');
+  }
 }
 
   /**
@@ -53,7 +51,7 @@ async initialize() {
   async loadAndStoreAdvice() {
     const count = await this.collection.count();
     if (count > 0) {
-      console.log(`Collection already has ${count} entries. Skipping load.`);
+      logger.info(`[RAG][Engine] Collection already has ${count} entries. Skipping load.`);
       return;
     }
 
@@ -63,7 +61,7 @@ async initialize() {
     }
 
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    console.log(`[RAG] Loaded ${data.length} items from JSON.`);
+  logger.info(`[RAG][Engine] Loaded ${data.length} items from JSON.`);
 
     const ids = [];
     const documents = [];
@@ -71,20 +69,21 @@ async initialize() {
 
     const textsToEmbed = data.map(item => item.content);
 
-    console.log(`[RAG] Generating embeddings for ${textsToEmbed.length} items...`);
+    logger.info(`[RAG][Engine] Generating embeddings for ${textsToEmbed.length} items...`);
     const generatedEmbeddings = await embeddingService.generateEmbeddings(textsToEmbed);
 
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
+      const rawLevel = item.metadata.fitness_level ?? item.metadata.running_level ?? 'any';
+      const fitnessLevel = Array.isArray(rawLevel) ? rawLevel.join(',') : rawLevel;
       ids.push(String(item.id));
       documents.push(item.content);
       metadatas.push({
-        running_level: Array.isArray(item.metadata.running_level)
-          ? item.metadata.running_level.join(',')
-          : item.metadata.running_level,
-        heart_rate_zone: item.metadata.heart_rate_zone,
-        scenario: item.metadata.scenario,
-        focus: item.metadata.focus,
+        fitness_level: fitnessLevel,
+        heart_rate_zone: item.metadata.heart_rate_zone ?? 'any',
+        activity_type: item.metadata.activity_type ?? 'any',
+        scenario: item.metadata.scenario ?? 'general',
+        focus: item.metadata.focus ?? 'general',
       });
     }
 
@@ -95,7 +94,7 @@ async initialize() {
       embeddings: generatedEmbeddings,
     });
 
-    console.log(`[RAG] Stored ${ids.length} items into Chroma.`);
+    logger.info(`[RAG][Engine] Stored ${ids.length} items into Chroma.`);
   }
 
   /**
@@ -106,7 +105,10 @@ async initialize() {
   async query(queryText, top_k = 3) {
     if (!this.isInitialized) await this.initialize();
 
-    console.log(`[RAG] Query received: ${queryText}`);
+    const queryPreview = queryText.length > 160 ? `${queryText.slice(0, 160)}...` : queryText;
+    logger.info(
+      `[RAG][Engine] query start | top_k=${top_k} | queryChars=${queryText.length} | preview="${queryPreview}"`
+    );
 
     const queryEmbedding = await embeddingService.generateEmbeddings([queryText]);
 
@@ -115,7 +117,15 @@ async initialize() {
       nResults: top_k,
     });
 
-    return this.formatResults(results);
+    const formatted = this.formatResults(results);
+    const topDistances = formatted.map((item) => item.distance).join(',');
+    const first = formatted[0];
+    const firstMeta = first?.metadata ? JSON.stringify(first.metadata) : 'none';
+    logger.info(
+      `[RAG][Engine] query end | resultCount=${formatted.length} | topDistances=${topDistances || 'none'} | firstId=${first?.id || 'n/a'} | firstMeta=${firstMeta}`
+    );
+
+    return formatted;
   }
 
   formatResults(raw) {

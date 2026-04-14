@@ -55,7 +55,11 @@ class LlmService {
         // Step 4: Fetch RAG advice (context-aware with grouped data)
         const ragAdviceArr = await this._fetchRagAdvice(userId, grouped);
         const ragAdvice = ragAdviceArr && ragAdviceArr.length > 0 ? ragAdviceArr : [];
-        logger.info(`LlmService: Retrieved ${ragAdvice.length} RAG advice items`);
+        const ragJoined = ragAdvice.join('\n');
+        const ragPreview = ragJoined.length > 180 ? `${ragJoined.slice(0, 180)}...` : ragJoined;
+        logger.info(
+          `LlmService: RAG context for user_id=${userId} | count=${ragAdvice.length} | joinedChars=${ragJoined.length} | preview="${ragPreview || 'none'}"`
+        );
 
         // Step 5: Build prompt using AskPromptBuilder
         const prompt = await this._buildAskPrompt(grouped, ragAdvice, messages);

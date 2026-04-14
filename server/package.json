@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node --test src/services/rag/test_rag.js",
-    "test:jest": "jest"
+    "test:jest": "jest",
+    "test:llm:rag-compare": "node tests/test_llm_rag_compare.mjs"
   },
   "devDependencies": {
     "jest": "^29.0.0"

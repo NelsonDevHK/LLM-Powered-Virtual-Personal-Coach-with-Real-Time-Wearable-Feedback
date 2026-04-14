@@ -10,9 +10,12 @@ const RAG_MIN_INTERVAL_MS = Number(process.env.RAG_MIN_INTERVAL_MS || 800);
 class RagService {
   async getAdvice(userId, groupedUserData = null, options = {}) {
     const useGate = options.useGate !== false;
+    const topK = Number(options.topK || 3);
 
     const run = async () => {
-      logger.info(`RagService: Processing advice for user_id=${userId}`);
+      logger.info(
+        `RagService: query start | user_id=${userId} | source=${groupedUserData ? 'grouped' : 'db'} | top_k=${topK} | useGate=${useGate}`
+      );
 
       // 1. Get Data
       let userDict;
@@ -25,15 +28,25 @@ class RagService {
       // 2. Build Prompt
       const promptBuilder = new RagPromptBuilder();
       const prompt = await promptBuilder.builder(userDict);
+      const promptPreview = prompt.length > 160 ? `${prompt.slice(0, 160)}...` : prompt;
+      logger.info(
+        `RagService: prompt built | user_id=${userId} | promptChars=${prompt.length} | preview="${promptPreview}"`
+      );
 
       // 3. Query RAG
-      const advice = await queryRAG(prompt);
+      const advice = await queryRAG(prompt, topK);
 
       //debug log
       if (!advice || (Array.isArray(advice) && advice.length === 0)) {
         logger.warn(`RagService: No advice returned for user_id=${userId} with prompt: ${prompt}`);
       } else {
-        logger.info(`RagService: Received advice for user_id=${userId}`);
+        const first = advice[0];
+        const firstPreview = first?.content
+          ? (first.content.length > 120 ? `${first.content.slice(0, 120)}...` : first.content)
+          : 'none';
+        logger.info(
+          `RagService: query end | user_id=${userId} | resultCount=${advice.length} | firstId=${first?.id || 'n/a'} | firstDistance=${first?.distance ?? 'n/a'} | firstPreview="${firstPreview}"`
+        );
       }
 
       // 4. Return Pure Data
