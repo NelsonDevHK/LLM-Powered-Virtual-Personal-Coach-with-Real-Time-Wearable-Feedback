@@ -57,3 +57,34 @@ SHOW COLUMNS FROM wearable_data;
 | rest_duration  | int          | YES  |     | NULL              |                   |
 | recorded_at    | datetime     | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
 +----------------+--------------+------+-----+-------------------+-------------------+
+
+******************(PLANNED - NOT YET IMPLEMENTED)******************
+USER_PROGRESS TABLE - Streak + Pet System
+
+Purpose: Track workout streaks, weekly goal completion, feed count, and pet mood state for gamification.
+
++-------------------+--------------+------+-----+-------------------+-------------------+
+| Field             | Type         | Null | Key | Default           | Extra             |
++-------------------+--------------+------+-----+-------------------+-------------------+
+| progress_id       | int          | NO   | PRI | NULL              | auto_increment    |
+| user_id           | int          | NO   | MUL | NULL              |                   |
+| current_streak    | int          | YES  |     | 0                 |                   |
+| weekly_goal       | int          | YES  |     | 4                 |                   |
+| last_workout_date | date         | YES  |     | NULL              |                   |
+| feed_count        | int          | YES  |     | 0                 |                   |
+| pet_mood          | enum('happy','okay','sad') | YES | | 'okay'         |                   |
+| weeks_inactive    | int          | YES  |     | 0                 |                   |
+| updated_at        | datetime     | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
+| created_at        | datetime     | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
++-------------------+--------------+------+-----+-------------------+-------------------+
+
+Notes:
+- current_streak: number of consecutive weeks meeting the weekly_goal
+- weekly_goal: target workouts per week (e.g. 4)
+- last_workout_date: date of the most recent qualifying workout session
+- feed_count: accumulated feed points from completed workouts
+- pet_mood: 'happy' (streak active, goal met), 'okay' (partial progress), 'sad' (inactive/no recent workouts)
+- weeks_inactive: counter for grace period before streak reset
+- Quality gate for valid workout: set_count >= 10, heart_rate within user range, rest_duration > 0
+
+******************(PLANNED - NOT YET IMPLEMENTED)******************

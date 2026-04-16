@@ -1,6 +1,6 @@
 /**
  * Watch Service (Phase 1)
- * Handles rest-feedback generation and session-end persistence
+ * Handles rest-feedback generation and set-end persistence
  */
 import watchValidationService from './watch_validation.service.js';
 import userRepository from '../database/repositories/user_repository.js';
@@ -39,7 +39,7 @@ class WatchService {
                 cleaned++;
             }
         }
-        // Keep dedup map bounded even if a session never reaches session-end.
+        // Keep dedup map bounded even if a session never reaches set-end.
         for (const [key, ts] of this.lastFeedbackTime.entries()) {
             if (Date.now() - ts > FEEDBACK_DEDUP_MS * 10) {
                 this.lastFeedbackTime.delete(key);
@@ -144,11 +144,14 @@ class WatchService {
             ragAdvice
         } = sessionContext;
 
+        const hrAnalysis = this._analyzeHeartRate(preparedData, profile);
+
         const prompt = this._buildPersonalizedInSessionPrompt({
             metrics: preparedData,
             profile,
             recentSessions,
-            ragAdvice
+            ragAdvice,
+            hrAnalysis
         });
 
         let suggestion = null;
@@ -159,9 +162,10 @@ class WatchService {
         }
 
         if (!suggestion || !suggestion.trim()) {
-            suggestion = this._generateFallbackRestSuggestion(preparedData, profile, recentSessions);
+            suggestion = this._generateFallbackRestSuggestion(preparedData, profile, recentSessions, hrAnalysis);
         }
 
+        suggestion = this._enforceSpecificFeedback(suggestion, hrAnalysis, preparedData, profile);
         suggestion = this._trimToSingleSentence(suggestion);
 
         return {
@@ -178,7 +182,10 @@ class WatchService {
             context: {
                 used_profile: Boolean(profile),
                 recent_sessions_count: Array.isArray(recentSessions) ? recentSessions.length : 0,
-                used_rag: Boolean(ragAdvice)
+                used_rag: Boolean(ragAdvice),
+                hr_trend: hrAnalysis.trend,
+                hr_zone_status: hrAnalysis.zoneStatus,
+                training_action: hrAnalysis.action
             }
         };
     }
@@ -206,13 +213,13 @@ class WatchService {
     }
 
     /**
-     * End workout session and persist to DB
+    * End set and persist to DB
      * Saves exactly one row with final aggregated metrics
      * @param {number} userId
-     * @param {Object} sessionData - Final session metrics with aggregates
+    * @param {Object} sessionData - Final set metrics with aggregates
      * @returns {Promise<Object>} - { success: boolean, dataId: number, message: string }
      */
-    async endSession(userId, sessionData) {
+    async endSet(userId, sessionData) {
         try {
             // Validate incoming data
             const validation = watchValidationService.validateSessionPayload({
@@ -221,7 +228,7 @@ class WatchService {
             });
 
             if (!validation.isValid) {
-                logger.warn(`Session-end validation failed for user ${userId}`);
+                logger.warn(`Set-end validation failed for user ${userId}`);
                 return {
                     success: false,
                     errors: validation.errors,
@@ -229,8 +236,8 @@ class WatchService {
                 };
             }
 
-            watchValidationService.logValidation(validation, 'session-end');
-            const preparedData = watchValidationService.prepareForSessionEnd(validation.data);
+            watchValidationService.logValidation(validation, 'set-end');
+            const preparedData = watchValidationService.prepareForSetEnd(validation.data);
 
             // Persist to database
             const result = await wearableRepository.save(userId, preparedData);
@@ -239,13 +246,13 @@ class WatchService {
                 throw new Error('Failed to insert wearable data');
             }
 
-            logger.info(`✅ Session ended for user ${userId}, data_id: ${result.insertId}`);
+            logger.info(`✅ Set ended for user ${userId}, data_id: ${result.insertId}`);
             this._clearUserSessionCache(userId);
 
             return {
                 success: true,
                 dataId: result.insertId,
-                message: 'Session data persisted successfully',
+                message: 'Set data persisted successfully',
                 sessionSummary: {
                     exercise_type: preparedData.exercise_type,
                     set_count: preparedData.set_count,
@@ -255,7 +262,7 @@ class WatchService {
                 }
             };
         } catch (error) {
-            logger.error(`Session-end error: ${error.message}`);
+            logger.error(`Set-end error: ${error.message}`);
             return {
                 success: false,
                 error: error.message,
@@ -270,12 +277,12 @@ class WatchService {
      * @param {Object} metrics 
      * @returns {string}
      */
-    _buildPersonalizedInSessionPrompt({ metrics, profile, recentSessions, ragAdvice }) {
+    _buildPersonalizedInSessionPrompt({ metrics, profile, recentSessions, ragAdvice, hrAnalysis }) {
         const recentAvgHeartRate = this._average((recentSessions || []).map((row) => Number(row.heart_rate)).filter(Number.isFinite));
         const recentAvgRest = this._average((recentSessions || []).map((row) => Number(row.rest_duration)).filter(Number.isFinite));
         const inSessionHrHistory = Array.isArray(metrics?.heart_rate_history) ? metrics.heart_rate_history : [];
 
-        return `You are a real-time watch workout coach. Return exactly one short sentence (max 22 words), direct and actionable.
+        return `You are a real-time watch workout coach. Return exactly one short sentence (max 50 words), direct and actionable.
 
 Current in-session metrics:
 - Exercise type: ${metrics.exercise_type}
@@ -298,8 +305,22 @@ Recent history trend:
 Current workout HR history (last 10 readings):
 - HR readings: ${inSessionHrHistory.length > 0 ? inSessionHrHistory.join(' → ') : 'no recent readings available'}
 
+Computed HR analysis (must use this):
+- HR trend: ${hrAnalysis.trend} (${hrAnalysis.deltaBpm >= 0 ? '+' : ''}${hrAnalysis.deltaBpm} bpm)
+- Target HR range: ${hrAnalysis.targetLow}-${hrAnalysis.targetHigh} bpm
+- Zone status: ${hrAnalysis.zoneStatus}
+- Required training action: ${hrAnalysis.action}
+
 Retrieved advice context:
 ${ragAdvice || 'No RAG context available.'}
+
+Rules:
+- Explicitly mention HR trend, zone status, and action.
+- Action must be one of: DELOAD, INCREASE_VOLUME, MAINTAIN.
+- If zone is above and trend is increasing, choose DELOAD.
+- If zone is below and trend is decreasing or stable, choose INCREASE_VOLUME.
+- Otherwise choose MAINTAIN.
+- Keep the sentence concrete and include at least one numeric value.
 
 Output only the one-sentence feedback.`;
     }
@@ -310,7 +331,7 @@ Output only the one-sentence feedback.`;
      * @param {Object} metrics 
      * @returns {string}
      */
-    _generateFallbackRestSuggestion(metrics, profile = null, recentSessions = []) {
+    _generateFallbackRestSuggestion(metrics, profile = null, recentSessions = [], hrAnalysis = null) {
         let suggestion = 'Keep up the great work! ';
         const exerciseLevel = profile?.exercise_level || 'Unknown';
         const fitnessGoal = profile?.fitness_goal || null;
@@ -348,7 +369,79 @@ Output only the one-sentence feedback.`;
             suggestion += 'You\'re ready for the next set!';
         }
 
+        if (hrAnalysis) {
+            suggestion = `HR is ${hrAnalysis.trend} (${hrAnalysis.deltaBpm >= 0 ? '+' : ''}${hrAnalysis.deltaBpm} bpm), ${hrAnalysis.zoneStatus} range ${hrAnalysis.targetLow}-${hrAnalysis.targetHigh}; action ${hrAnalysis.action}.`;
+        }
+
         return suggestion;
+    }
+
+    _enforceSpecificFeedback(suggestion, hrAnalysis, metrics, profile = null) {
+        const text = String(suggestion || '').trim();
+        const lower = text.toLowerCase();
+        const hasTrend = /increasing|decreasing|stable/.test(lower);
+        const hasZone = /above|below|within/.test(lower);
+        const hasAction = /deload|increase_volume|increase volume|maintain/.test(lower);
+
+        if (hasTrend && hasZone && hasAction) {
+            return text;
+        }
+
+        const goalText = profile?.fitness_goal ? ` for your ${profile.fitness_goal} goal` : '';
+        return `HR is ${hrAnalysis.trend} (${hrAnalysis.deltaBpm >= 0 ? '+' : ''}${hrAnalysis.deltaBpm} bpm), ${hrAnalysis.zoneStatus} ${hrAnalysis.targetLow}-${hrAnalysis.targetHigh}; ${hrAnalysis.action === 'INCREASE_VOLUME' ? 'increase volume' : hrAnalysis.action.toLowerCase()}${goalText}.`;
+    }
+
+    _analyzeHeartRate(metrics, profile = null) {
+        const history = Array.isArray(metrics?.heart_rate_history)
+            ? metrics.heart_rate_history.map((v) => Number(v)).filter(Number.isFinite)
+            : [];
+        const currentHr = Number(metrics?.heart_rate);
+        const firstHr = history.length > 0 ? history[0] : currentHr;
+        const lastHr = history.length > 0 ? history[history.length - 1] : currentHr;
+        const deltaRaw = Number.isFinite(lastHr - firstHr) ? (lastHr - firstHr) : 0;
+        const deltaBpm = Math.round(deltaRaw);
+
+        let trend = 'stable';
+        if (deltaBpm >= 5) trend = 'increasing';
+        if (deltaBpm <= -5) trend = 'decreasing';
+
+        const age = Number(profile?.age);
+        const level = String(profile?.exercise_level || 'Unknown').toLowerCase();
+        const estimatedMaxHr = Number.isFinite(age) && age > 0 ? (220 - age) : 190;
+
+        let lowPct = 0.65;
+        let highPct = 0.8;
+        if (level === 'beginner') {
+            lowPct = 0.6;
+            highPct = 0.75;
+        } else if (level === 'advanced') {
+            lowPct = 0.7;
+            highPct = 0.85;
+        }
+
+        const targetLow = Math.round(estimatedMaxHr * lowPct);
+        const targetHigh = Math.round(estimatedMaxHr * highPct);
+
+        let zoneStatus = 'within';
+        if (Number.isFinite(currentHr) && currentHr < targetLow) zoneStatus = 'below';
+        if (Number.isFinite(currentHr) && currentHr > targetHigh) zoneStatus = 'above';
+
+        let action = 'MAINTAIN';
+        if (zoneStatus === 'above' && trend === 'increasing') {
+            action = 'DELOAD';
+        } else if (zoneStatus === 'below' && (trend === 'decreasing' || trend === 'stable')) {
+            action = 'INCREASE_VOLUME';
+        }
+
+        return {
+            currentHr,
+            deltaBpm,
+            trend,
+            targetLow,
+            targetHigh,
+            zoneStatus,
+            action
+        };
     }
 
     _generateDiverseFallbackSuggestion(metrics, profile) {

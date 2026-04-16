@@ -1,6 +1,6 @@
 /**
  * Watch Data Validation Service (Phase 1)
- * Validates and prepares watch session data for REST feedback and session-end persistence
+ * Validates and prepares watch session data for REST feedback and set-end persistence
  */
 import logger from '../utils/logger.js';
 
@@ -14,7 +14,7 @@ class WatchValidationService {
         const errors = [];
         const validatedData = {};
 
-        // Required fields for both rest-feedback and session-end
+        // Required fields for both rest-feedback and set-end
         if (!payload.user_id || !Number.isInteger(payload.user_id)) {
             errors.push('user_id is required and must be an integer');
         } else {
@@ -47,7 +47,7 @@ class WatchValidationService {
             validatedData.current_speed = parseFloat(payload.current_speed).toFixed(2);
         }
 
-        // Exercise type validation (required for session-end, optional for rest-feedback)
+        // Exercise type validation (required for set-end, optional for rest-feedback)
         if (payload.exercise_type) {
             const validExerciseTypes = ['Strength', 'HIIT', 'Cardio', 'General'];
             if (!validExerciseTypes.includes(payload.exercise_type)) {
@@ -70,7 +70,7 @@ class WatchValidationService {
             validatedData.set_count = 0;
         }
 
-        // Sleep metrics (optional for rest-feedback, recommended for session-end)
+        // Sleep metrics (optional for rest-feedback, recommended for set-end)
         if (payload.sleep_duration !== undefined) {
             if (!Number.isInteger(payload.sleep_duration) || payload.sleep_duration < 0) {
                 errors.push('sleep_duration must be a non-negative integer (minutes)');
@@ -130,11 +130,11 @@ class WatchValidationService {
     }
 
     /**
-     * Prepare data for session-end persistence (writes to DB)
+    * Prepare data for set-end persistence (writes to DB)
      * @param {Object} validatedData 
      * @returns {Object}
      */
-    prepareForSessionEnd(validatedData) {
+    prepareForSetEnd(validatedData) {
         return {
             heart_rate: validatedData.heart_rate,
             heart_rate_history: validatedData.heart_rate_history,

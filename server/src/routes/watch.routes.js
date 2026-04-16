@@ -54,7 +54,7 @@ router.post('/rest-feedback', authenticateJWT, WatchController.getRestFeedback);
  * Body: { heart_rate, current_speed, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration }
  * Response: { success, dataId, message, sessionSummary }
  */
-router.post('/set-end', authenticateJWT, WatchController.endSession);
+router.post('/set-end', authenticateJWT, WatchController.endSet);
 
 /**
  * GET /api/watch/health

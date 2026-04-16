@@ -198,7 +198,7 @@ class WorkoutManager: NSObject, ObservableObject {
         }
     }
 
-    func sendSessionEnd(exerciseType: String, setCount: Int, restDuration: Int, completion: @escaping (Bool, String) -> Void) {
+    func sendSetEnd(exerciseType: String, setCount: Int, restDuration: Int, completion: @escaping (Bool, String) -> Void) {
         if let urlError = validateBackendURLForCurrentDevice() {
             completion(false, urlError)
             return
@@ -226,11 +226,11 @@ class WorkoutManager: NSObject, ObservableObject {
             self?.sendAuthenticatedWatchRequest(path: "/api/watch/set-end", payload: payload) { success, json, errorMessage in
                 DispatchQueue.main.async {
                     if !success {
-                        completion(false, errorMessage ?? "Failed to save session")
+                        completion(false, errorMessage ?? "Failed to save set")
                         return
                     }
 
-                    let message = (json?["message"] as? String) ?? "Session saved"
+                    let message = (json?["message"] as? String) ?? "Set saved"
                     completion(true, message)
                 }
             }

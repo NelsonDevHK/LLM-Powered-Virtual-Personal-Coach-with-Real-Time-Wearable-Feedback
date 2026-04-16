@@ -34,7 +34,7 @@ class WearableRepository {
     }
 
     /**
-     * Save new wearable data (Phase 1: session-end persistence)
+    * Save new wearable data (Phase 1: set-end persistence)
      * @param {number} userId 
         * @param {Object} data - Wearable data object with heart_rate, exercise_type, set_count, sleep_duration, sleep_quality, rest_duration
      * @returns {Promise<{insertId: number, affectedRows: number}>}

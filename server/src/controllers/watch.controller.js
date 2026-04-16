@@ -162,13 +162,13 @@ class WatchController {
 
     /**
     * POST /api/watch/set-end
-     * End workout session and persist final metrics to DB
-     * Only one row is written per complete session
+     * End set and persist final metrics to DB
+     * Only one row is written per set
      * @param {Object} req
      * @param {Object} res
      * @param {Function} next
      */
-    static async endSession(req, res, next) {
+    static async endSet(req, res, next) {
         try {
             const userId = req.user?.user_id; // From JWT middleware
             const sessionData = req.body;
@@ -182,7 +182,7 @@ class WatchController {
 
             logger.info(`Set-end request from user ${userId}`);
 
-            const result = await watchService.endSession(userId, sessionData);
+            const result = await watchService.endSet(userId, sessionData);
 
             if (!result.success) {
                 return res.status(result.statusCode || 400).json({

@@ -182,26 +182,27 @@ struct ContentView: View {
 
                             Button(action: {
                                 if isRestPhase {
-                                    setCount += 1
-                                    isRestPhase.toggle()
-                                    phaseStartDate = Date()
-                                } else {
-                                    let setMinutes = currentPhaseElapsedMinutes
-                                    workoutManager.sendSessionEnd(
+                                    let restMinutes = currentPhaseElapsedMinutes
+                                    let completedSetCount = setCount
+                                    workoutManager.sendSetEnd(
                                         exerciseType: selectedExerciseType.rawValue,
-                                        setCount: setCount,
-                                        restDuration: setMinutes
+                                        setCount: completedSetCount,
+                                        restDuration: restMinutes
                                     ) { success, message in
                                         workoutManager.statusMessage = success
                                             ? "✓ \(message)"
-                                            : "Session save error: \(message)"
+                                            : "Set save error: \(message)"
 
                                         if success {
                                             workoutManager.clearWorkoutHeartRateReadings()
-                                            isRestPhase = true
+                                            setCount += 1
+                                            isRestPhase = false
                                             phaseStartDate = Date()
                                         }
                                     }
+                                } else {
+                                    isRestPhase = true
+                                    phaseStartDate = Date()
                                 }
                             }) {
                                 Text(isRestPhase ? "Start Set" : "Start Rest")
@@ -233,10 +234,32 @@ struct ContentView: View {
                     // Start/Stop Buttons
                     if isWorkoutActive {
                         Button(action: {
-                            workoutManager.endWorkout()
-                            workoutManager.statusMessage = "Workout ended. Great job!"
-                            isWorkoutActive = false
-                            phaseStartDate = nil
+                            if isRestPhase {
+                                let restMinutes = currentPhaseElapsedMinutes
+                                let completedSetCount = setCount
+                                workoutManager.sendSetEnd(
+                                    exerciseType: selectedExerciseType.rawValue,
+                                    setCount: completedSetCount,
+                                    restDuration: restMinutes
+                                ) { success, message in
+                                    if success {
+                                        workoutManager.statusMessage = "✓ \(message)\nWorkout ended. Great job!"
+                                        workoutManager.clearWorkoutHeartRateReadings()
+                                    } else {
+                                        workoutManager.statusMessage = "Final set save error: \(message)\nWorkout ended. Great job!"
+                                    }
+
+                                    workoutManager.endWorkout()
+                                    isWorkoutActive = false
+                                    isRestPhase = false
+                                    phaseStartDate = nil
+                                }
+                            } else {
+                                workoutManager.endWorkout()
+                                workoutManager.statusMessage = "Workout ended. Great job!"
+                                isWorkoutActive = false
+                                phaseStartDate = nil
+                            }
                         }) {
                             Text("End Workout")
                                 .font(.caption2)
