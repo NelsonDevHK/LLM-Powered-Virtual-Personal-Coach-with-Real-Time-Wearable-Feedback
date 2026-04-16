@@ -55,11 +55,12 @@ class LlmService {
         );
 
         // Step 4: Build prompt using AskPromptBuilder
-        const prompt = await this._buildAskPrompt(grouped, ragAdvice, messages);
+        const prompt = await this._buildAskPrompt(grouped, ragAdvice, userQuery, messages);
         logger.info(`LlmService: Built ask prompt with ${(ragAdvice || []).length} RAG items`);
 
         // Step 5: Invoke LLM
-        const llmResponse = await this._invokeLLM(prompt);
+        const llmResponseRaw = await this._invokeLLM(prompt);
+        const llmResponse = this._enforceMetricGrounding(llmResponseRaw, grouped);
         logger.info(`LlmService: LLM response received for user_id=${userId}`);
 
         // Step 6: Format result
@@ -117,17 +118,17 @@ class LlmService {
    * Private helper: Build ask prompt using AskPromptBuilder
    * @private
    */
-  async _buildAskPrompt(groupedUserData, ragAdvice, messagesMode) {
+  async _buildAskPrompt(groupedUserData, ragAdvice, userQuery, messagesMode) {
     try {
       const promptBuilder = new AskPromptBuilder();
       
       if (messagesMode) {
         // For messages mode: just build coaching prompt, don't include in messages array
-        const prompt = await promptBuilder.builder(groupedUserData, ragAdvice);
+        const prompt = await promptBuilder.builder(groupedUserData, ragAdvice, userQuery);
         return prompt;
       } else {
         // For question mode: same prompt
-        const prompt = await promptBuilder.builder(groupedUserData, ragAdvice);
+        const prompt = await promptBuilder.builder(groupedUserData, ragAdvice, userQuery);
         return prompt;
       }
     } catch (err) {
@@ -160,6 +161,30 @@ class LlmService {
       userMessage: userQuery,
       wasMessagesMode: Array.isArray(messagesMode)
     };
+  }
+
+  /**
+   * Private helper: ensure the final reply references concrete user metrics.
+   * Adds a short metric-prefixed sentence only when the model output is too generic.
+   * @private
+   */
+  _enforceMetricGrounding(response, groupedUserData) {
+    const text = String(response || '').trim();
+    if (!text) return text;
+
+    const mentionsMetric = /(heart\s*rate|bpm|sleep|duration|calories|set\s*count|rest)/i.test(text);
+    if (mentionsMetric) return text;
+
+    const latest = Array.isArray(groupedUserData?.wearable_data) && groupedUserData.wearable_data.length > 0
+      ? groupedUserData.wearable_data[0]
+      : null;
+
+    const hr = latest?.heart_rate ?? latest?.average_heart_rate ?? 'unknown';
+    const sleep = latest?.sleep_duration ?? 'unknown';
+    const duration = latest?.duration ?? 'unknown';
+
+    const prefix = `Based on your metrics (heart rate: ${hr} bpm, sleep: ${sleep} hrs, duration: ${duration} min), `;
+    return `${prefix}${text}`;
   }
 
   /**

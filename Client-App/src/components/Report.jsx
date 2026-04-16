@@ -28,14 +28,12 @@ export default function Report() {
   const [selectedSession, setSelectedSession] = useState('');
   const [months, setMonths] = useState([]); // unique months
   const [selectedMonth, setSelectedMonth] = useState('');
-  // For demo, use user_id 1. Replace with actual user_id from auth if available.
-  const userId = 1;
 
 
   useEffect(() => {
     setLoading(true);
     const token = getToken();
-    fetch(`${API_BASE}/api/wearable/${userId}`, {
+    fetch(`${API_BASE}/api/wearable`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -60,7 +58,7 @@ export default function Report() {
         setError(e.message);
         setLoading(false);
       });
-  }, [API_BASE, userId]);
+  }, [API_BASE]);
 
   // When month changes, update sessions and selected session
   useEffect(() => {
@@ -82,6 +80,14 @@ export default function Report() {
   const restDurations = sessionData.map(d => d.rest_duration).filter(v => Number.isFinite(Number(v))).map(Number);
   const sleepDurations = sessionData.map(d => d.sleep_duration).filter(v => Number.isFinite(Number(v))).map(Number);
   const sleepQualities = sessionData.map(d => d.sleep_quality).filter(v => Number.isFinite(Number(v))).map(Number);
+  const uniqueSleepDurations = Array.from(new Set(sleepDurations));
+  const uniqueSleepQualities = Array.from(new Set(sleepQualities));
+  const sessionSleepDurationDisplay = uniqueSleepDurations.length
+    ? uniqueSleepDurations.join(', ')
+    : '-';
+  const sessionSleepQualityDisplay = uniqueSleepQualities.length
+    ? uniqueSleepQualities.join(', ')
+    : '-';
   const exerciseTypes = Array.from(new Set(sessionData.map(d => d.exercise_type || 'General')));
   const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : '-';
   const min = arr => arr.length ? Math.min(...arr) : '-';
@@ -164,6 +170,11 @@ export default function Report() {
           <div className="report-main">
             <div className="report-left">
               <ReportChart data={sessionData} />
+              <div className="report-sleep-panel" style={{ marginTop: 16 }}>
+                <b>Today Sleep Data</b><br/>
+                Duration (min): <b>{sessionSleepDurationDisplay}</b><br/>
+                Quality (1-5): <b>{sessionSleepQualityDisplay}</b>
+              </div>
             </div>
             <div className="report-right">
               <h3>Monthly Performance</h3>

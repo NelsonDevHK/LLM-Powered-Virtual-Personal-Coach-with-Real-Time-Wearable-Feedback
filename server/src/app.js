@@ -29,6 +29,17 @@ app.get('/api/wearable/:userId', async (req, res) => {
   }
 });
 
+// Get wearable data for the authenticated user
+app.get('/api/wearable', authenticateJWT, async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const data = await dbService.findWearableByUserId(userId);
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Health Check
 app.get('/api/health', async (req, res, next) => {
   try {

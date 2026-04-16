@@ -34,7 +34,9 @@ export class dbService {
         }
     }
 
-    async getLlmData(userId) {
+// this is a function that fetches all data needed for the full LLM prompt (profile + wearable + RAG advice) --- IGNORE ---
+// Which is covered in getResponse already helper function wrapped in llm.service.js
+    async getLlmData(userId) { 
         try {
             const userInfo = await userRepository.findById(userId);
             const wearableData = await wearableRepository.findById(userId);

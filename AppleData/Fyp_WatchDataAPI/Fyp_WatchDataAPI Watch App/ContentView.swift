@@ -233,18 +233,8 @@ struct ContentView: View {
                     // Start/Stop Buttons
                     if isWorkoutActive {
                         Button(action: {
-                            let restMinutes = currentPhaseElapsedMinutes
-                            workoutManager.sendSessionEnd(
-                                exerciseType: selectedExerciseType.rawValue,
-                                setCount: setCount,
-                                restDuration: restMinutes
-                            ) { success, message in
-                                workoutManager.statusMessage = success
-                                    ? "✓ \(message)"
-                                    : "Session save error: \(message)"
-                            }
-
                             workoutManager.endWorkout()
+                            workoutManager.statusMessage = "Workout ended. Great job!"
                             isWorkoutActive = false
                             phaseStartDate = nil
                         }) {

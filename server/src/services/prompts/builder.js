@@ -42,20 +42,33 @@ export class RagPromptBuilder extends PromptBuilder {
  * Incorporates user profile, wearable data, and RAG advice.
  */
 export class AskPromptBuilder extends PromptBuilder {
-    async builder(userDict, ragAdvice) {
+    async builder(userDict, ragAdvice, userQuery = "") {
         // Safely extract user profile fields
         const age = userDict.age ?? userDict.age_group ?? "unknown";
         const fitnessLevel = userDict.exercise_level ?? userDict.excercise_level ?? "unknown";
-        const heartRate = userDict.heart_rate ?? "unknown";
+        const latest = Array.isArray(userDict.wearable_data) && userDict.wearable_data.length > 0
+            ? userDict.wearable_data[0]
+            : null;
+        const heartRate = userDict.heart_rate ?? latest?.heart_rate ?? latest?.average_heart_rate ?? "unknown";
         
         // Build wearable context summary from recent data
         let wearableContext = '';
         if (Array.isArray(userDict.wearable_data) && userDict.wearable_data.length > 0) {
-            const latest = userDict.wearable_data[0];
             wearableContext = `Recent Workout Summary:\n- Activity: ${latest.exercise_type ?? 'unknown'}\n- Duration: ${latest.duration ?? 'unknown'} min\n- Avg Heart Rate: ${latest.average_heart_rate ?? 'unknown'} bpm\n- Calories: ${latest.calories ?? 'unknown'}\n- Sleep: ${latest.sleep_duration ?? 'unknown'} hrs (quality: ${latest.sleep_quality ?? 'unknown'}/5)`;
         } else {
             wearableContext = 'No recent workout data available.';
         }
+
+        const metricSnapshot = [
+            `Heart Rate: ${heartRate} bpm`,
+            `Exercise Type: ${latest?.exercise_type ?? 'unknown'}`,
+            `Duration: ${latest?.duration ?? 'unknown'} min`,
+            `Calories: ${latest?.calories ?? 'unknown'}`,
+            `Sleep: ${latest?.sleep_duration ?? 'unknown'} min`,
+            `Sleep Quality: ${latest?.sleep_quality ?? 'unknown'}/5`,
+            `Set Count: ${latest?.set_count ?? 'unknown'}`,
+            `Rest Duration: ${latest?.rest_duration ?? 'unknown'} min`
+        ].join('\n- ');
 
         // Format RAG advice context
         const ragContext = (ragAdvice && ragAdvice.length > 0) 
@@ -67,7 +80,9 @@ export class AskPromptBuilder extends PromptBuilder {
             .replace(/\{age\}/g, String(age))
             .replace(/\{fitness_level\}/g, String(fitnessLevel))
             .replace(/\{heart_rate\}/g, String(heartRate))
-            .replace(/\{context\}/g, ragContext);
+            .replace(/\{context\}/g, ragContext)
+            .replace(/\{user_question\}/g, String(userQuery || 'No explicit question provided'))
+            .replace(/\{metric_snapshot\}/g, `- ${metricSnapshot}`);
 
         // Prepend wearable context for comprehensive coaching context
         return `${wearableContext}\n\n${prompt}`;
