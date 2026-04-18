@@ -53,7 +53,7 @@ class UserRepository {
     }
 
     /**
-     * Get table schema
+     * Get table schema, helper function
      * @param {string} tableName 
      * @returns {Promise<Array>}
      */

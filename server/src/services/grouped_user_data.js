@@ -13,6 +13,7 @@ function getAgeGroup(age) {
  * Fetches grouped user profile and wearable data for RAG context
  * @param {number} userId
  * @returns {Promise<Object>} grouped data
+ * 
  */
 export async function getGroupedUserData(userId) {
   const user = await userRepository.findById(userId);

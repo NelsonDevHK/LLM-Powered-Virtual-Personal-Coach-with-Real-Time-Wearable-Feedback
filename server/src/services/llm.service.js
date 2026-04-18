@@ -102,6 +102,7 @@ class LlmService {
 
   /**
    * Private helper: Fetch RAG advice with context-aware grouped data
+   * call RAG service to get advice
    * @private
    */
   async _fetchRagAdvice(userId, groupedUserData) {

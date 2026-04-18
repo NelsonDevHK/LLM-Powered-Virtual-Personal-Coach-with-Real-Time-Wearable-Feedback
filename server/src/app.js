@@ -110,6 +110,32 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+
+/**
+ * POST /api/ask
+ *
+ * Directly call `llm_service` for dedicate jobs to other services
+ * return the assistant's response. This endpoint requires authentication; the
+ * `authenticateJWT` middleware populates `req.user` with the authenticated
+ * user's details (at minimum `user_id` and `user_name`).
+ *
+ * Request body (JSON):
+ *   - question?: string       Single question text to be answered by the LLM.
+ *   - messages?: Array<Object> Conversation messages to provide context (alternative to `question`).
+ *
+ * Success Response (200):
+ *   { result: string }
+ *
+ * Error Responses:
+ *   400 - Missing required parameters (neither `question` nor `messages` provided).
+ *   401 - Unauthorized (handled by `authenticateJWT` when token missing/invalid).
+ *   500 - Server error or LLM service failure.
+ *
+ * Notes:
+ *   - The handler delegates to `llmService.getResponse(userId, { question, messages })`.
+ *   - Errors are logged via `logger` and the route attempts to return the underlying
+ *     error message when available.
+ */
 app.post('/api/ask', authenticateJWT, async (req, res) => {
   try {
     const { question, messages } = req.body || {};
