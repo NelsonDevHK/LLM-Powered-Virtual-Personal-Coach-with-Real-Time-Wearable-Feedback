@@ -31,7 +31,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 24px #000a;
   z-index: 200;
-  display: flex;
+  display: none;
   flex-direction: column;
   padding: 1rem;
   box-sizing: border-box;
