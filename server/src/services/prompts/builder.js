@@ -16,7 +16,8 @@ export class PromptBuilder {
  */
 export class RagPromptBuilder extends PromptBuilder {
     async builder(userDict) {
-        logger.info(`RagPromptBuilder.builder: Building RAG query for user data: ${JSON.stringify(userDict, null, 2)}`);
+        // logger.info(`RagPromptBuilder.builder: Building RAG query for user data: ${JSON.stringify(userDict, null, 2)}`);
+        logger.info(`RagPromptBuilder.builder: Building RAG query for user_id=${userDict.user_id}`);
         // Summarize wearable data
         let wearableSummary = '';
         if (Array.isArray(userDict.wearable_data)) {
@@ -32,6 +33,8 @@ export class RagPromptBuilder extends PromptBuilder {
             .replace(/\{exercise_level\}/g, userDict.exercise_level ?? userDict.excercise_level ?? 'unknown')
             .replace(/\{wearable_summary\}/g, wearableSummary || 'General fitness inquiry');
 
+
+        // logger.info(`RagPromptBuilder.builder: Built RAG prompt for user_id=${userDict.user_id} with wearable summary: ${wearableSummary}. Full prompt: ${prompt}`);
         return prompt;
     }
 }

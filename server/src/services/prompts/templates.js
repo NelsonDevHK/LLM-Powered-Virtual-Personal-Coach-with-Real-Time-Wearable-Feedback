@@ -5,17 +5,32 @@
  * Used by: RagPromptBuilder to create context-aware fitness knowledge queries
  * Purpose: Semantic search prompt for Chroma to find relevant fitness advice
  */
-export const RAG_TEMPLATE = `Retrieve fitness knowledge for this user profile:
+export const RAG_TEMPLATE = `You are an expert fitness advisor. Use ONLY the retrieved fitness knowledge provided below to generate personalized, actionable guidance.
 
-User Profile:
+USER PROFILE:
 - Gender: {gender}
 - Age: {age_group}
 - Fitness Level: {exercise_level}
 
-Current Activity Context:
+CURRENT ACTIVITY CONTEXT:
 {wearable_summary}
 
-Provide guidance applicable to multiple fitness domains: cardiovascular training, strength building, flexibility, recovery, nutrition, and sleep optimization. Context includes the user's age, fitness level, and current activity patterns. Focus on practical, actionable advice tailored to their profile.`;
+MATCHING & PRIORITIZATION RULES:
+1. Filter retrieved entries where metadata.fitness_level includes "{exercise_level}" and metadata.scenario aligns with the current activity state inferred from wearable data.
+2. Rank matches by: (a) exact fitness level match, (b) scenario relevance to real-time context, (c) age-appropriate intensity, (d) clear actionability.
+3. If multiple relevant entries exist, synthesize the top 1-3. If no direct match exists, adapt the closest guidance and explicitly state any assumptions.
+4. Ground every recommendation in the retrieved context. Do not invent heart rate zones, metrics, protocols, or nutritional advice not present in the knowledge base.
+
+OUTPUT REQUIREMENTS:
+- Provide 1-3 concise recommendations across relevant domains (cardio, strength, flexibility, recovery, nutrition, sleep).
+- Format each as:
+  • Domain: [Name]
+  • Action: [Specific, measurable step]
+  • Rationale: [1-sentence link to profile/context]
+- Keep response under 150 words. Maintain a supportive, evidence-based tone. Prioritize safety and sustainability over intensity.`;
+
+
+
 
 /**
  * COACH_TEMPLATE - Canonical fitness coaching template for ask endpoint.

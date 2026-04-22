@@ -20,12 +20,14 @@ export async function getGroupedUserData(userId) {
   if (!user) throw new Error('User not found');
 
 
-  // Use age field directly
+  // Convert string to integer
   const age = user.age ? parseInt(user.age, 10) : null;
+
+  // return a age group string instead of number to increase RAG embedding similarity
   const age_group = age ? getAgeGroup(age) : 'Unknown';
 
   const wearable_data = await wearableRepository.findById(userId);
-
+  
   return {
     user_id: user.user_id,
     gender: user.gender,

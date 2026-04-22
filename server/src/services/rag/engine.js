@@ -34,7 +34,7 @@ async initialize() {
     });
 
     this.isInitialized = true;
-    logger.info(`[RAG] Engine initialized. Collection: ${config.COLLECTION_NAME}`);
+    logger.info(`RAG.Engine initialized. Collection: ${config.COLLECTION_NAME}`);
 
     await this.loadAndStoreAdvice();
   } catch (err) {
@@ -50,7 +50,7 @@ async initialize() {
    */
   async loadAndStoreAdvice() {
     const count = await this.collection.count();
-    if (count > 0) {
+    if (count > 20) {
       logger.info(`[RAG][Engine] Collection already has ${count} entries. Skipping load.`);
       return;
     }
@@ -61,7 +61,7 @@ async initialize() {
     }
 
     const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-  logger.info(`[RAG][Engine] Loaded ${data.length} items from JSON.`);
+  logger.info(`RAG.Engine Loaded ${data.length} items from JSON.`);
 
     const ids = [];
     const documents = [];
@@ -69,7 +69,7 @@ async initialize() {
 
     const textsToEmbed = data.map(item => item.content);
 
-    logger.info(`[RAG][Engine] Generating embeddings for ${textsToEmbed.length} items...`);
+    logger.info(`RAG.Engine Generating embeddings for ${textsToEmbed.length} items...`);
     const generatedEmbeddings = await embeddingService.generateEmbeddings(textsToEmbed);
 
     for (let i = 0; i < data.length; i++) {
@@ -94,36 +94,60 @@ async initialize() {
       embeddings: generatedEmbeddings,
     });
 
-    logger.info(`[RAG][Engine] Stored ${ids.length} items into Chroma.`);
+    logger.info(`RAG.Engine Stored ${ids.length} items into Chroma.`);
   }
 
   /**
    * Query the database
    * @param {string} queryText
    * @param {number} top_k
+   * @param {list} filters - optional filter object for future use (e.g. { exercise_type: 'running' })
    */
-  async query(queryText, top_k = 3) {
+  async query(queryText, top_k = 3, filters = {}) {
     if (!this.isInitialized) await this.initialize();
 
+    // Helper lines: log preview
     const queryPreview = queryText.length > 160 ? `${queryText.slice(0, 160)}...` : queryText;
     logger.info(
-      `[RAG][Engine] query start | top_k=${top_k} | queryChars=${queryText.length} | preview="${queryPreview}"`
+      `RAG.Engine query start | top_k=${top_k} | queryChars=${queryText.length} | preview="${queryPreview}"`
     );
 
     const queryEmbedding = await embeddingService.generateEmbeddings([queryText]);
+    logger.info(`RAG.Engine Generated embedding for query.`);
 
+    //filter logic: assume all exercise_type in the DB is either 'hiit', 'strength', 'cardio'
+    // the filter will append any to all three types of execersise_type to increase the recall
+    // if not defined, then will only search for 'any' so the result will be general
+
+    const whereConditions = [];
+    if (filters.exerciseType && filters.exerciseType !== 'any') {
+      whereConditions.push(
+        { activity_type: { $eq: filters.exerciseType } },
+        { activity_type: { $eq: 'any' } }
+      );
+    } else {
+      whereConditions.push({activity_type: { $eq: 'any' }});
+    }
+
+    logger.info(`RAG.Engine Applied filters whereConditions: ${JSON.stringify(whereConditions)}`);
+
+    const whereClause = whereConditions.length > 0 ? { $or: whereConditions }: undefined;
+
+    //core query logic - currently no filter applied, but can be extended in the future
     const results = await this.collection.query({
       queryEmbeddings: queryEmbedding,
-      nResults: top_k,
+      nResults: top_k * 2, //for filtering because it may less than 3
+      where: whereClause,
     });
 
     const formatted = this.formatResults(results);
+    // logger.info(`RAG.Engine Retrieved ${formatted} results from Chroma.`);
     const topDistances = formatted.map((item) => item.distance).join(',');
     const first = formatted[0];
     const firstMeta = first?.metadata ? JSON.stringify(first.metadata) : 'none';
-    logger.info(
-      `[RAG][Engine] query end | resultCount=${formatted.length} | topDistances=${topDistances || 'none'} | firstId=${first?.id || 'n/a'} | firstMeta=${firstMeta}`
-    );
+    // logger.info(
+    //   `[RAG][Engine] query end | resultCount=${formatted.length} | topDistances=${topDistances || 'none'} | firstId=${first?.id || 'n/a'} | firstMeta=${firstMeta}`
+    // );
 
     return formatted;
   }

@@ -27,6 +27,8 @@ class LlmService {
   async getResponse(userId, options = {}) {
     const { question, messages } = options;
     
+    // logger.info(`LlmService.getResponse called for user_id=${userId} with options: ${JSON.stringify(options)}`);
+
     if (!question && !messages) {
       throw new Error('Either "question" (string) or "messages" (array) must be provided');
     }
@@ -40,12 +42,14 @@ class LlmService {
         // Step 1: Fetch grouped user data (full wearable history)
         const grouped = await this._getGroupedUserData(userId);
         logger.info(`LlmService: Fetched grouped user data for user_id=${userId}`);
+        logger.info(`LlmService: Grouped user data details: ${JSON.stringify(grouped, null, 2)}`);
 
         // Step 2: Extract user query for logging and RAG
         const userQuery = this._extractUserQuery(question, messages);
         logger.info(`LlmService: User query: "${userQuery}"`);
 
         // Step 3: Fetch RAG advice (context-aware with grouped data)
+        logger.info(`LlmService: Start Fetching RAG advice for user_id=${userId} with grouped data context`);
         const ragAdviceArr = await this._fetchRagAdvice(userId, grouped);
         const ragAdvice = ragAdviceArr && ragAdviceArr.length > 0 ? ragAdviceArr : [];
         const ragJoined = ragAdvice.join('\n');

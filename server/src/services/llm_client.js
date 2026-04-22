@@ -59,7 +59,7 @@ async function unloadModel() {
 }
 
 async function getLLMResponse(question) {
-    logger.info(`sending question to link ${OLLAMA_BASE} with model ${MODEL_NAME}`);
+    logger.info(`Llm_client: sending question to link ${OLLAMA_BASE} with model ${MODEL_NAME}`);
     const endpoint = buildEndpoint(OLLAMA_BASE);
     const isGenerate = /\/api\/generate\/?$/.test(endpoint);
     const messages = normalizeMessages(question);

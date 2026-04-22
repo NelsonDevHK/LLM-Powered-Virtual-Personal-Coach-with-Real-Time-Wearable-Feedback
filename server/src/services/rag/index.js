@@ -5,6 +5,6 @@ export const initRAG = async () => {
   await ragEngine.initialize();
 };
 
-export const queryRAG = async (question, top_k = 3) => {
-  return await ragEngine.query(question, top_k);
+export const queryRAG = async (question, top_k = 3, filters = { }) => {
+  return await ragEngine.query(question, top_k, filters);
 };

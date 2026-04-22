@@ -22,19 +22,27 @@ class RagService {
       if (groupedUserData) {
         userDict = groupedUserData;
       } else {
-        userDict = await user_data.getRagData(userId);
+        userDict = await user_data.getRagData(userId); //FAll Back system, will fetch from the DB
       }
 
       // 2. Build Prompt
       const promptBuilder = new RagPromptBuilder();
       const prompt = await promptBuilder.builder(userDict);
-      const promptPreview = prompt.length > 160 ? `${prompt.slice(0, 160)}...` : prompt;
-      logger.info(
-        `RagService: prompt built | user_id=${userId} | promptChars=${prompt.length} | preview="${promptPreview}"`
-      );
+      // logger.info(`RagService: Full prompt details ${prompt}.`);
 
-      // 3. Query RAG
-      const advice = await queryRAG(prompt, topK);
+      // const promptPreview = prompt.length > 160 ? `${prompt.slice(0, 160)}...` : prompt;
+      // logger.info(
+      //   `RagService: prompt built | user_id=${userId} | promptChars=${prompt.length} | preview="${promptPreview}"`
+      // );
+      // 3. Add filter items for RAF query 
+      let exerciseType = 'any';
+      if (Array.isArray(userDict.wearable_data) && userDict.wearable_data.length > 0) {
+        // Use the last entry's exercise_type (most recent)
+        exerciseType = userDict.wearable_data[userDict.wearable_data.length - 1].exercise_type || 'any';
+      }
+
+      // 4. Query RAG
+      const advice = await queryRAG(prompt, topK, { exerciseType: exerciseType });
 
       //debug log
       if (!advice || (Array.isArray(advice) && advice.length === 0)) {

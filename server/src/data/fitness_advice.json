@@ -108,5 +108,225 @@
       "scenario": "post_session",
       "focus": "self_monitoring"
     }
+  },
+  {
+    "id": "warmup_strength_prep",
+    "content": "Before strength training, spend 5-10 minutes on dynamic warm-up: light cardio, joint mobility, and 1-2 light sets of your first exercise to prepare muscles and reduce injury risk.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "low",
+      "activity_type": "strength",
+      "scenario": "planning",
+      "focus": "warmup_preparation"
+    }
+  },
+  {
+    "id": "progressive_overload_beginner_strength",
+    "content": "Beginners should focus on consistency first: master form with light weight for 2-3 weeks before gradually increasing load by 2.5-5% per week.",
+    "metadata": {
+      "fitness_level": ["beginner"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "planning",
+      "focus": "progressive_overload"
+    }
+  },
+  {
+    "id": "doms_management_recovery",
+    "content": "If experiencing muscle soreness (DOMS) 24-48h post-workout, use light movement, gentle stretching, and adequate protein intake. Avoid heavy training of the same muscle group until soreness subsides.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "post_session",
+      "focus": "recovery"
+    }
+  },
+  {
+    "id": "breathing_technique_lifts",
+    "content": "During strength lifts, exhale during the exertion phase (pushing/pulling) and inhale during the return. Avoid holding breath to prevent blood pressure spikes.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "in_session",
+      "focus": "technique_execution"
+    }
+  },
+  {
+    "id": "hiit_work_rest_ratio",
+    "content": "For HIIT beginners, start with a 1:2 work-to-rest ratio (e.g., 30s effort, 60s rest). As fitness improves, progress to 1:1 or 2:1 ratios for greater conditioning stimulus.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "high",
+      "activity_type": "hiit",
+      "scenario": "planning",
+      "focus": "interval_structure"
+    }
+  },
+  {
+    "id": "hiit_heart_rate_recovery",
+    "content": "During HIIT rest intervals, aim for heart rate to drop 20-30 bpm before the next round. If recovery is slower, extend rest or reduce next interval intensity.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "high",
+      "activity_type": "hiit",
+      "scenario": "in_session",
+      "focus": "heart_rate_management"
+    }
+  },
+  {
+    "id": "hiit_beginner_scaling",
+    "content": "New to HIIT? Start with low-impact movements (marching, step-ups) and shorter intervals (20s). Focus on completing the session with good form rather than maximum intensity.",
+    "metadata": {
+      "fitness_level": ["beginner"],
+      "heart_rate_zone": "moderate",
+      "activity_type": "hiit",
+      "scenario": "in_session",
+      "focus": "accessibility_scaling"
+    }
+  },
+  {
+    "id": "cardio_zone2_benefits",
+    "content": "Zone 2 cardio (conversational pace) builds aerobic base efficiently. Aim for 20-45 minutes at this intensity 2-3x/week to improve endurance without excessive fatigue.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "moderate",
+      "activity_type": "cardio",
+      "scenario": "planning",
+      "focus": "aerobic_development"
+    }
+  },
+  {
+    "id": "cardio_aerobic_base_building",
+    "content": "When building aerobic base, prioritize consistency over intensity: 3-4 moderate sessions per week yield better long-term gains than occasional hard efforts.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "moderate",
+      "activity_type": "cardio",
+      "scenario": "planning",
+      "focus": "progressive_overload"
+    }
+  },
+  {
+    "id": "cardio_strength_balance",
+    "content": "When combining cardio and strength in one week, separate sessions by 6+ hours or alternate days. If done together, perform strength first to preserve lifting quality.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "any",
+      "scenario": "planning",
+      "focus": "training_balance"
+    }
+  },
+  {
+    "id": "form_fatigue_hiit",
+    "content": "During HIIT, if form deteriorates (e.g., knees caving, back rounding), pause and reset. It's better to reduce speed or modify the movement than to train with poor mechanics.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "high",
+      "activity_type": "hiit",
+      "scenario": "in_session",
+      "focus": "injury_prevention"
+    }
+  },
+  {
+    "id": "compound_first_strength",
+    "content": "In strength sessions, prioritize compound movements (squats, presses, rows) early when energy is highest. Save isolation exercises for later in the workout.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "planning",
+      "focus": "exercise_order"
+    }
+  },
+  {
+    "id": "tempo_control_strength",
+    "content": "Use controlled tempo (e.g., 3s lowering, 1s pause, explosive up) to increase time-under-tension and improve muscle control, especially when learning new movements.",
+    "metadata": {
+      "fitness_level": ["beginner", "intermediate"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "in_session",
+      "focus": "technique_execution"
+    }
+  },
+  {
+    "id": "plateau_breaking_intermediate",
+    "content": "If progress stalls for 2-3 weeks, try changing one variable: add a set, increase reps by 1-2, or adjust rest time. Avoid changing multiple factors at once.",
+    "metadata": {
+      "fitness_level": ["intermediate"],
+      "heart_rate_zone": "any",
+      "activity_type": "strength",
+      "scenario": "planning",
+      "focus": "progressive_overload"
+    }
+  },
+  {
+    "id": "cool_down_post_hiit",
+    "content": "After HIIT, spend 5 minutes on light walking and dynamic stretching to aid heart rate recovery and reduce next-day stiffness. Avoid sitting still immediately post-session.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "hiit",
+      "scenario": "post_session",
+      "focus": "recovery"
+    }
+  },
+  {
+    "id": "hiit_frequency_recovery",
+    "content": "Limit high-intensity HIIT to 2-3 sessions per week with at least 48 hours between sessions. Fill other days with strength, Zone 2 cardio, or active recovery.",
+    "metadata": {
+      "fitness_level": ["intermediate", "advanced"],
+      "heart_rate_zone": "any",
+      "activity_type": "hiit",
+      "scenario": "planning",
+      "focus": "fatigue_management"
+    }
+  },
+  {
+    "id": "cardio_heart_rate_drift",
+    "content": "During longer cardio sessions, heart rate may drift upward even at steady pace. If drift exceeds 10 bpm, reduce speed slightly or add a brief walk break to stay in target zone.",
+    "metadata": {
+      "fitness_level": ["intermediate", "advanced"],
+      "heart_rate_zone": "moderate",
+      "activity_type": "cardio",
+      "scenario": "in_session",
+      "focus": "heart_rate_management"
+    }
+  },
+  {
+    "id": "recovery_day_cardio_light",
+    "content": "On recovery days, choose very light cardio (walking, easy cycling) at <60% max heart rate for 20-30 minutes to promote blood flow without adding fatigue.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "low",
+      "activity_type": "cardio",
+      "scenario": "planning",
+      "focus": "active_recovery"
+    }
+  },
+  {
+    "id": "injury_warning_stop_signal",
+    "content": "Stop immediately and seek guidance if you feel sharp pain, joint instability, chest discomfort, or unusual shortness of breath. Distinguish between muscle fatigue and injury signals.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "any",
+      "scenario": "in_session",
+      "focus": "injury_prevention"
+    }
+  },
+  {
+    "id": "stress_impact_training_adjustment",
+    "content": "High life stress can elevate resting heart rate and reduce recovery. On high-stress days, reduce training volume by 20-30% and prioritize sleep and hydration.",
+    "metadata": {
+      "fitness_level": ["any"],
+      "heart_rate_zone": "any",
+      "activity_type": "any",
+      "scenario": "planning",
+      "focus": "stress_management"
+    }
   }
 ]
