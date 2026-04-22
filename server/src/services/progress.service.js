@@ -217,10 +217,10 @@ class ProgressService {
 
             if (goalReachedThisSession) {
                 nextStreak += 1;
-                                logger.info(`[session-end] streak incremented user=${userId} new_streak=${nextStreak}`);
-                            } else if (hasAlreadyMetGoalThisWeek) {
-                                logger.info(`[session-end] streak NOT incremented user=${userId} reason="Goal already met this week" current_streak=${nextStreak}`);
+                logger.info(`[session-end] streak incremented user=${userId} new_streak=${nextStreak}`);
                 weeksInactive = 0;
+            } else if (hasAlreadyMetGoalThisWeek) {
+                logger.info(`[session-end] streak NOT incremented user=${userId} reason="Goal already met this week" current_streak=${nextStreak}`);
             }
 
             const petMood = this._derivePetMood({
