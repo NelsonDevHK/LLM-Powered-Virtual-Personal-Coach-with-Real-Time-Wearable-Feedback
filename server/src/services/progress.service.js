@@ -7,8 +7,45 @@ const MIN_REALISTIC_HEART_RATE = 60;
 const MAX_REALISTIC_HEART_RATE = 220;
 const BYPASS_SESSION_GATE = String(process.env.BYPASS_SESSION_GATE || '').toLowerCase() === 'true';
 const HARDCODE_SESSION_TEST_DATA = String(process.env.HARDCODE_SESSION_TEST_DATA || '').toLowerCase() === 'true';
+const SESSION_END_DEDUP_MS = 30 * 1000; // Prevent duplicate session-end within 30 seconds
 
 class ProgressService {
+    constructor() {
+        this.lastSessionEndTime = new Map(); // Track last session-end request per user
+        
+        // Auto-cleanup expired dedup entries every 2 minutes
+        this.dedupCleanupInterval = setInterval(() => {
+            this._cleanupExpiredDedup();
+        }, 2 * 60 * 1000);
+    }
+
+    /**
+     * Cleanup expired dedup entries to prevent memory leak
+     * @private
+     */
+    _cleanupExpiredDedup() {
+        let cleaned = 0;
+        for (const [userId, timestamp] of this.lastSessionEndTime.entries()) {
+            if (Date.now() - timestamp > SESSION_END_DEDUP_MS * 5) {
+                this.lastSessionEndTime.delete(userId);
+                cleaned++;
+            }
+        }
+        if (cleaned > 0) {
+            logger.info(`🧹 Session-end dedup cleanup: removed ${cleaned} expired entries`);
+        }
+    }
+
+    /**
+     * Check if session-end request is a duplicate (too soon after last one)
+     * @private
+     */
+    _isDuplicateSessionEnd(userId) {
+        const lastTime = this.lastSessionEndTime.get(userId);
+        if (!lastTime) return false;
+        const timeSinceLastRequest = Date.now() - lastTime;
+        return timeSinceLastRequest < SESSION_END_DEDUP_MS;
+    }
     async getProgress(userId) {
         try {
             const row = await progressRepository.ensureRow(userId);
@@ -60,6 +97,22 @@ class ProgressService {
             logger.info(
                 `[session-end] request user=${userId} bypass=${BYPASS_SESSION_GATE} hardcode=${HARDCODE_SESSION_TEST_DATA}`
             );
+
+            // DEDUPLICATION: Reject if same user sent session-end too recently
+            if (!BYPASS_SESSION_GATE && this._isDuplicateSessionEnd(userId)) {
+                const timeSinceLastRequest = Date.now() - this.lastSessionEndTime.get(userId);
+                logger.info(
+                    `[session-end] duplicate request ignored user=${userId} timeSinceLastMs=${timeSinceLastRequest}`
+                );
+                return {
+                    success: true,
+                    counted: false,
+                    reason: 'Another workout session was just submitted. Please wait before submitting again.',
+                    progress: await progressRepository.ensureRow(userId).then(row => this._shapeProgress(row)),
+                    sessionSummary: { counted: false }
+                };
+            }
+
             const validation = watchValidationService.validateSessionPayload({
                 user_id: userId,
                 ...sessionData
@@ -73,6 +126,9 @@ class ProgressService {
                     statusCode: 400
                 };
             }
+
+            // Record this session-end request time for deduplication
+            this.lastSessionEndTime.set(userId, Date.now());
 
             let payload = watchValidationService.prepareForSessionEnd(validation.data);
 
@@ -150,13 +206,20 @@ class ProgressService {
                 }
             }
 
+            // GATE: Prevent multiple streak increments in the same calendar week
+            // Only allow streak increment if feedCount hasn't already reached the goal this week
+            const hasAlreadyMetGoalThisWeek = feedCount >= weeklyGoal;
+
             // Each counted session contributes one feed point this week.
             const previousFeedCount = feedCount;
             feedCount = Math.min(feedCount + 1, weeklyGoal);
-            const goalReachedThisSession = previousFeedCount < weeklyGoal && feedCount === weeklyGoal;
+            const goalReachedThisSession = !hasAlreadyMetGoalThisWeek && previousFeedCount < weeklyGoal && feedCount === weeklyGoal;
 
             if (goalReachedThisSession) {
                 nextStreak += 1;
+                                logger.info(`[session-end] streak incremented user=${userId} new_streak=${nextStreak}`);
+                            } else if (hasAlreadyMetGoalThisWeek) {
+                                logger.info(`[session-end] streak NOT incremented user=${userId} reason="Goal already met this week" current_streak=${nextStreak}`);
                 weeksInactive = 0;
             }
 
