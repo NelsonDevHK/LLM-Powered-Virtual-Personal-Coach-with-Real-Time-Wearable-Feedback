@@ -1,5 +1,5 @@
 import { summarizeWearableData } from "../../utils/wearableSummary.js";
-import { RAG_TEMPLATE, COACH_TEMPLATE } from "./templates.js";
+import { RAG_TEMPLATE, REPORT_SUMMARY_TEMPLATE } from "./templates.js";
 import logger from "../../utils/logger.js";
 
 
@@ -40,11 +40,11 @@ export class RagPromptBuilder extends PromptBuilder {
 }
 
 /**
- * AskPromptBuilder - Builds comprehensive fitness coaching prompts for the /api/ask endpoint.
+ * SummaryPromptBuilder - Builds comprehensive fitness coaching prompts for the /api/ask endpoint.
  * Focuses on holistic fitness guidance (cardio, strength, recovery, nutrition, sleep).
  * Incorporates user profile, wearable data, and RAG advice.
  */
-export class AskPromptBuilder extends PromptBuilder {
+export class SummaryPromptBuilder extends PromptBuilder {
     async builder(userDict, ragAdvice, userQuery = "") {
         // Safely extract user profile fields
         const age = userDict.age ?? userDict.age_group ?? "unknown";
@@ -78,8 +78,8 @@ export class AskPromptBuilder extends PromptBuilder {
             ? ragAdvice.join('\n\n') 
             : 'No fitness knowledge base matches found.';
 
-        // Fill COACH_TEMPLATE with user and context data
-        const prompt = COACH_TEMPLATE
+        // Fill REPORT_SUMMARY_TEMPLATE with user and context data
+        const prompt = REPORT_SUMMARY_TEMPLATE
             .replace(/\{age\}/g, String(age))
             .replace(/\{fitness_level\}/g, String(fitnessLevel))
             .replace(/\{heart_rate\}/g, String(heartRate))
@@ -92,43 +92,43 @@ export class AskPromptBuilder extends PromptBuilder {
     }
 }
 
-export class LlmPromptBuilder extends PromptBuilder {
-    async builder(userDict, ragAdvice) {
-        // For simplicity, we just concatenate all the info into a single prompt string.
-        // In a real implementation, you would likely want to use a more sophisticated template.
-        const prompt =  COACH_TEMPLATE
-            .replace(/\{age\}/g, String(userDict.age ?? "unknown"))
-            .replace(/\{fitness_level\}/g, userDict.excercise_level ?? userDict.exercise_level ?? "unknown")
-            .replace(/\{heart_rate\}/g, String(userDict.heart_rate ?? "unknown"))
-            .replace(/\{context\}/g, (ragAdvice ?? []).join("\n") || "No advice available");
+// export class LlmPromptBuilder extends PromptBuilder {
+//     async builder(userDict, ragAdvice) {
+//         // For simplicity, we just concatenate all the info into a single prompt string.
+//         // In a real implementation, you would likely want to use a more sophisticated template.
+//         const prompt =  REPORT_SUMMARY_TEMPLATE
+//             .replace(/\{age\}/g, String(userDict.age ?? "unknown"))
+//             .replace(/\{fitness_level\}/g, userDict.excercise_level ?? userDict.exercise_level ?? "unknown")
+//             .replace(/\{heart_rate\}/g, String(userDict.heart_rate ?? "unknown"))
+//             .replace(/\{context\}/g, (ragAdvice ?? []).join("\n") || "No advice available");
 
-        const extraContext = `\n\nADDITIONAL WEARABLE CONTEXT:\n- Exercise type: ${userDict.exercise_type ?? "unknown"}\n- Set count: ${userDict.set_count ?? "unknown"}\n- Rest duration: ${userDict.rest_duration ?? "unknown"} min\n- Sleep duration: ${userDict.sleep_duration ?? "unknown"} min\n- Sleep quality: ${userDict.sleep_quality ?? "unknown"}/5`;
+//         const extraContext = `\n\nADDITIONAL WEARABLE CONTEXT:\n- Exercise type: ${userDict.exercise_type ?? "unknown"}\n- Set count: ${userDict.set_count ?? "unknown"}\n- Rest duration: ${userDict.rest_duration ?? "unknown"} min\n- Sleep duration: ${userDict.sleep_duration ?? "unknown"} min\n- Sleep quality: ${userDict.sleep_quality ?? "unknown"}/5`;
 
-        //logger.info(`Built LLM prompt for user data: ${JSON.stringify(userDict, null, 2)}, RAG advice: ${JSON.stringify(ragAdvice, null, 2)}. Resulting prompt: ${prompt}`);
+//         //logger.info(`Built LLM prompt for user data: ${JSON.stringify(userDict, null, 2)}, RAG advice: ${JSON.stringify(ragAdvice, null, 2)}. Resulting prompt: ${prompt}`);
 
-        return `${prompt}${extraContext}`;
-    }
+//         return `${prompt}${extraContext}`;
+//     }
 
-    async buildSessionSummaryPrompt(userDict) {
-        return `You are a fitness coach. Summarize this workout session briefly and practically in 4-6 sentences.
+//     async buildSessionSummaryPrompt(userDict) {
+//         return `You are a fitness coach. Summarize this workout session briefly and practically in 4-6 sentences.
 
-User profile:
-- Age: ${userDict.age ?? 'unknown'}
-- Fitness level: ${userDict.excercise_level ?? userDict.exercise_level ?? 'unknown'}
+// User profile:
+// - Age: ${userDict.age ?? 'unknown'}
+// - Fitness level: ${userDict.excercise_level ?? userDict.exercise_level ?? 'unknown'}
 
-Latest wearable metrics:
-- Heart rate: ${userDict.heart_rate ?? 'unknown'} bpm
-- Exercise type: ${userDict.exercise_type ?? 'unknown'}
-- Duration: ${userDict.duration ?? 'unknown'} min
-- Rest duration: ${userDict.rest_duration ?? 'unknown'} min
-- Sleep duration: ${userDict.sleep_duration ?? 'unknown'} min
-- Sleep quality: ${userDict.sleep_quality ?? 'unknown'}/5
+// Latest wearable metrics:
+// - Heart rate: ${userDict.heart_rate ?? 'unknown'} bpm
+// - Exercise type: ${userDict.exercise_type ?? 'unknown'}
+// - Duration: ${userDict.duration ?? 'unknown'} min
+// - Rest duration: ${userDict.rest_duration ?? 'unknown'} min
+// - Sleep duration: ${userDict.sleep_duration ?? 'unknown'} min
+// - Sleep quality: ${userDict.sleep_quality ?? 'unknown'}/5
 
-Include:
-1) overall effort,
-2) one strength,
-3) one area to improve,
-4) one next-session action.`;
-    }
-}
+// Include:
+// 1) overall effort,
+// 2) one strength,
+// 3) one area to improve,
+// 4) one next-session action.`;
+//     }
+// }
     

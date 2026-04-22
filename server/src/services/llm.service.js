@@ -6,7 +6,7 @@
  */
 import { getGroupedUserData } from './grouped_user_data.js';
 import { getLLMResponse } from './llm_client.js';
-import { AskPromptBuilder, LlmPromptBuilder } from './prompts/builder.js';
+import { SummaryPromptBuilder } from './prompts/builder.js';
 import user_data from './db.service.js';
 import ragService from './rag.service.js';
 import llmGateService from './llm_gate.service.js';
@@ -58,7 +58,7 @@ class LlmService {
           `LlmService: RAG context for user_id=${userId} | count=${ragAdvice.length} | joinedChars=${ragJoined.length} | preview="${ragPreview || 'none'}"`
         );
 
-        // Step 4: Build prompt using AskPromptBuilder
+        // Step 4: Build prompt using SummaryPromptBuilder
         const prompt = await this._buildAskPrompt(grouped, ragAdvice, userQuery, messages);
         logger.info(`LlmService: Built ask prompt with ${(ragAdvice || []).length} RAG items`);
 
@@ -120,12 +120,12 @@ class LlmService {
   }
 
   /**
-   * Private helper: Build ask prompt using AskPromptBuilder
+   * Private helper: Build ask prompt using SummaryPromptBuilder
    * @private
    */
   async _buildAskPrompt(groupedUserData, ragAdvice, userQuery, messagesMode) {
     try {
-      const promptBuilder = new AskPromptBuilder();
+      const promptBuilder = new SummaryPromptBuilder();
       
       if (messagesMode) {
         // For messages mode: just build coaching prompt, don't include in messages array
@@ -198,29 +198,30 @@ class LlmService {
     * Kept temporarily for backward compatibility at service layer.
    * @param {number} userId
    */
-  async getSessionSummary(userId) {
-    return llmGateService.runExclusive(
-      userId,
-      'llm-summary',
-      async () => {
-        logger.info(`LlmService: Processing session summary for user_id=${userId}`);
+//   async getSessionSummary(userId) {
+//     return llmGateService.runExclusive(
+//       userId,
+//       'llm-summary',
+//       async () => {
+//         logger.info(`LlmService: Processing session summary for user_id=${userId}`);
 
-        // 1. Get User Data (old path - single wearable record)
-        const userDict = await user_data.getLlmData(userId);
+//         // 1. Get User Data (old path - single wearable record)
+//         const userDict = await user_data.getLlmData(userId);
 
-        // 2. Build Prompt for Session Summary
-        const promptBuilder = new LlmPromptBuilder();
-        const prompt = await promptBuilder.buildSessionSummaryPrompt(userDict);
-        logger.info(`LlmService: Built session summary prompt for user_id=${userId}`);
+//         // 2. Build Prompt for Session Summary
+//         const promptBuilder = new LlmPromptBuilder();
+//         const prompt = await promptBuilder.buildSessionSummaryPrompt(userDict);
+//         logger.info(`LlmService: Built session summary prompt for user_id=${userId}`);
 
-        // 3. Call LLM for Session Summary
-        const llmResponse = await getLLMResponse(prompt);
+//         // 3. Call LLM for Session Summary
+//         const llmResponse = await getLLMResponse(prompt);
 
-        return { summary: llmResponse };
-      },
-      { minIntervalMs: LLM_MIN_INTERVAL_MS }
-    );
-  }
+        // return { summary: llmResponse };
+//       },
+      // { minIntervalMs: LLM_MIN_INTERVAL_MS }
+    // );
+  // }
+
 }
 
 export default new LlmService();

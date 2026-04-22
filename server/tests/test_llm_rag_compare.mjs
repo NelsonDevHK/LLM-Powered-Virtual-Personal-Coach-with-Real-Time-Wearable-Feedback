@@ -2,7 +2,7 @@ import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { getLLMResponse } from '../src/services/llm_client.js';
 import ragService from '../src/services/rag.service.js';
-import { AskPromptBuilder } from '../src/services/prompts/builder.js';
+import { SummaryPromptBuilder } from '../src/services/prompts/builder.js';
 
 function divider(label) {
   console.log(`\n===== ${label} =====`);
@@ -55,7 +55,7 @@ async function runWithRag(question) {
     console.log(`RAG_TOP1=${short(ragAdvice[0], 180)}`);
   }
 
-  const promptBuilder = new AskPromptBuilder();
+  const promptBuilder = new SummaryPromptBuilder();
   const systemPrompt = await promptBuilder.builder(groupedUserData, ragAdvice);
   const finalPrompt = `${systemPrompt}\n\nUser question: ${question}`;
 

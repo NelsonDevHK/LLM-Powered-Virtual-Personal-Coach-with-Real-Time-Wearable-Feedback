@@ -4,7 +4,7 @@ server/GerminConnect/
 
 /server/node_modules
 server/logs/chroma_db/
-chroma_db/
+chroma_db/  
 chroma_db/
  
 # Ignore Chroma DB and runtime data
@@ -14,3 +14,5 @@ server/chroma/*/
 server/chroma/*/*.bin
 server/chroma/*/data_level*
 node_modules/
+
+AppleData/Fyp_WatchDataAPI/Fyp_WatchDataAPI.xcodeproj/
