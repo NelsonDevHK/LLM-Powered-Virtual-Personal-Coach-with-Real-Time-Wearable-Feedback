@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getToken } from '../api/auth';
 import { fetchProgress, updateWeeklyGoal } from '../api/progress';
+import corgiTile from '../assets/corgiTile.png';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
 
@@ -9,6 +10,16 @@ const moodLabel = {
   okay: 'Okay',
   sad: 'Sad'
 };
+
+const moodSpriteRow = {
+  sad: 0,
+  okay: 1,
+  happy: 2
+};
+
+const SPRITE_COLUMNS = 6;
+const SPRITE_ROWS = 3;
+const SPRITE_FRAME_MS = 1000;
 
 export default function Dashboard() {
   const [pairStatus, setPairStatus] = useState(null);
@@ -21,6 +32,7 @@ export default function Dashboard() {
   const [progressError, setProgressError] = useState('');
   const [goalInput, setGoalInput] = useState('4');
   const [goalSaving, setGoalSaving] = useState(false);
+  const [spriteFrame, setSpriteFrame] = useState(0);
 
   const fetchPairStatus = async () => {
     const token = getToken();
@@ -60,6 +72,14 @@ export default function Dashboard() {
   useEffect(() => {
     fetchPairStatus();
     fetchUserProgress();
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setSpriteFrame((currentFrame) => (currentFrame + 1) % SPRITE_COLUMNS);
+    }, SPRITE_FRAME_MS);
+
+    return () => window.clearInterval(intervalId);
   }, []);
 
   const handleGeneratePairCode = async () => {
@@ -118,6 +138,9 @@ export default function Dashboard() {
   const weeklyFeedProgress = Math.min(feedCount, weeklyGoal);
   const streakProgress = Math.min(weeklyFeedProgress / weeklyGoal, 1);
   const streakPercent = Math.round(streakProgress * 100);
+  const spriteRow = moodSpriteRow[progress?.pet_mood] ?? moodSpriteRow.okay;
+  const spriteX = SPRITE_COLUMNS > 1 ? (spriteFrame / (SPRITE_COLUMNS - 1)) * 100 : 0;
+  const spriteY = SPRITE_ROWS > 1 ? (spriteRow / (SPRITE_ROWS - 1)) * 100 : 0;
 
   return (
     <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 16px 32px' }}>
@@ -135,6 +158,25 @@ export default function Dashboard() {
             </div>
 
             <div>
+              <div
+                aria-label={`Corgi pet ${moodLabel[progress.pet_mood] || progress.pet_mood || 'Okay'}`}
+                title={`Corgi pet ${moodLabel[progress.pet_mood] || progress.pet_mood || 'Okay'}`}
+                style={{
+                  width: 'min(100%, 180px)',
+                  aspectRatio: '1 / 1',
+                  margin: '0 auto 12px',
+                  borderRadius: 0,
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  backgroundImage: `url(${corgiTile})`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundSize: `${SPRITE_COLUMNS * 100}% ${SPRITE_ROWS * 100}%`,
+                  backgroundPosition: `${spriteX}% ${spriteY}%`,
+                  imageRendering: 'pixelated',
+                  boxShadow: 'none',
+                }}
+              />
+
               <div style={{ marginBottom: 6 }}>
                 <b>Pet mood:</b> {moodLabel[progress.pet_mood] || progress.pet_mood || 'Okay'}
               </div>
