@@ -1,6 +1,6 @@
 /**
  * Watch Routes (Phase 2)
- * Routes for watch app endpoints: in-session-feedback, rest-feedback (alias), and set-end
+ * Routes for watch app endpoints: in-session-feedback, rest-feedback (alias), set-end, and session-end
  */
 import { Router } from 'express';
 import WatchController from '../controllers/watch.controller.js';
@@ -55,6 +55,12 @@ router.post('/rest-feedback', authenticateJWT, WatchController.getRestFeedback);
  * Response: { success, dataId, message, sessionSummary }
  */
 router.post('/set-end', authenticateJWT, WatchController.endSet);
+
+/**
+ * POST /api/watch/session-end
+ * End workout session and update streak / pet progress.
+ */
+router.post('/session-end', authenticateJWT, WatchController.endSession);
 
 /**
  * GET /api/watch/health

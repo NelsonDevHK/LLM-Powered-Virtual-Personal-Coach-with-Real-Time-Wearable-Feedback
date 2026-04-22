@@ -204,6 +204,45 @@ class WatchController {
     }
 
     /**
+     * POST /api/watch/session-end
+     * End workout session and update streak / pet progress.
+     */
+    static async endSession(req, res, next) {
+        try {
+            const userId = req.user?.user_id;
+            const sessionData = req.body;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'User not authenticated'
+                });
+            }
+
+            const result = await watchService.endSession(userId, sessionData);
+
+            if (!result.success) {
+                return res.status(result.statusCode || 400).json({
+                    success: false,
+                    errors: result.errors || [result.error]
+                });
+            }
+
+            return res.status(200).json({
+                success: true,
+                counted: result.counted,
+                message: result.message || 'Session processed',
+                reason: result.reason,
+                progress: result.progress,
+                sessionSummary: result.sessionSummary
+            });
+        } catch (error) {
+            logger.error(`Session-end controller error: ${error.message}`);
+            next(error);
+        }
+    }
+
+    /**
      * GET /api/watch/health
      * Health check for watch endpoints
      * @param {Object} req

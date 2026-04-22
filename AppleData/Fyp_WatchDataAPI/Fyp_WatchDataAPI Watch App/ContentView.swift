@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var isRestPhase = false
     @State private var setCount = 0
     @State private var phaseStartDate: Date? = nil
+    @State private var workoutStartDate: Date? = nil
     @State private var now = Date()
     @State private var backendURL: String = ""
     @State private var pairingCode: String = ""
@@ -234,32 +235,7 @@ struct ContentView: View {
                     // Start/Stop Buttons
                     if isWorkoutActive {
                         Button(action: {
-                            if isRestPhase {
-                                let restMinutes = currentPhaseElapsedMinutes
-                                let completedSetCount = setCount
-                                workoutManager.sendSetEnd(
-                                    exerciseType: selectedExerciseType.rawValue,
-                                    setCount: completedSetCount,
-                                    restDuration: restMinutes
-                                ) { success, message in
-                                    if success {
-                                        workoutManager.statusMessage = "✓ \(message)\nWorkout ended. Great job!"
-                                        workoutManager.clearWorkoutHeartRateReadings()
-                                    } else {
-                                        workoutManager.statusMessage = "Final set save error: \(message)\nWorkout ended. Great job!"
-                                    }
-
-                                    workoutManager.endWorkout()
-                                    isWorkoutActive = false
-                                    isRestPhase = false
-                                    phaseStartDate = nil
-                                }
-                            } else {
-                                workoutManager.endWorkout()
-                                workoutManager.statusMessage = "Workout ended. Great job!"
-                                isWorkoutActive = false
-                                phaseStartDate = nil
-                            }
+                            finalizeWorkout()
                         }) {
                             Text("End Workout")
                                 .font(.caption2)
@@ -273,6 +249,7 @@ struct ContentView: View {
                             isRestPhase = false
                             setCount = 1
                             phaseStartDate = Date()
+                            workoutStartDate = Date()
                         }) {
                             Text("Start Workout")
                                 .font(.caption2)
@@ -304,6 +281,55 @@ struct ContentView: View {
         guard let start = phaseStartDate else { return 0 }
         let elapsed = Int(now.timeIntervalSince(start))
         return max(0, elapsed / 60)
+    }
+
+    private var workoutElapsedMinutes: Int {
+        guard let start = workoutStartDate else { return 0 }
+        let elapsed = Int(now.timeIntervalSince(start))
+        return max(0, elapsed / 60)
+    }
+
+    private func finalizeWorkout() {
+        let workoutDurationMinutes = workoutElapsedMinutes
+        let finalSetCount = setCount
+        let exerciseType = selectedExerciseType.rawValue
+        let restMinutes = isRestPhase ? currentPhaseElapsedMinutes : 0
+
+        let finishSession: (String) -> Void = { prefix in
+            workoutManager.sendSessionEnd(
+                exerciseType: exerciseType,
+                setCount: finalSetCount,
+                restDuration: restMinutes,
+                workoutDurationMinutes: workoutDurationMinutes
+            ) { success, message in
+                let sessionLine = success ? "✓ \(message)" : "Session end error: \(message)"
+                let combinedMessage = prefix.isEmpty ? sessionLine : "\(prefix)\n\(sessionLine)"
+
+                workoutManager.endWorkout()
+                workoutManager.clearWorkoutHeartRateReadings()
+                workoutManager.statusMessage = combinedMessage
+                isWorkoutActive = false
+                isRestPhase = false
+                phaseStartDate = nil
+                workoutStartDate = nil
+                setCount = 0
+            }
+        }
+
+        guard isRestPhase else {
+            finishSession("")
+            return
+        }
+
+        let completedSetCount = setCount
+        workoutManager.sendSetEnd(
+            exerciseType: exerciseType,
+            setCount: completedSetCount,
+            restDuration: restMinutes
+        ) { success, message in
+            let prefix = success ? "✓ \(message)" : "Final set save error: \(message)"
+            finishSession(prefix)
+        }
     }
 }
 

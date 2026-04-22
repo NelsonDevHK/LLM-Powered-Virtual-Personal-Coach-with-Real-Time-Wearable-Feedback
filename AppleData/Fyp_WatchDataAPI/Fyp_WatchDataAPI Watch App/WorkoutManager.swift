@@ -125,12 +125,26 @@ class WorkoutManager: NSObject, ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15
         request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
 
         isPairingInProgress = true
 
+        var hasCompleted = false
+        let watchdog = DispatchWorkItem { [weak self] in
+            guard hasCompleted == false else { return }
+            hasCompleted = true
+            self?.isPairingInProgress = false
+            self?.isBackendPaired = false
+            completion(false, "Pairing timed out. Check backend URL and network, then try again.")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 20, execute: watchdog)
+
         URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             DispatchQueue.main.async {
+                guard hasCompleted == false else { return }
+                hasCompleted = true
+                watchdog.cancel()
                 self?.isPairingInProgress = false
 
                 if let error = error {
@@ -232,6 +246,42 @@ class WorkoutManager: NSObject, ObservableObject {
 
                     let message = (json?["message"] as? String) ?? "Set saved"
                     completion(true, message)
+                }
+            }
+        }
+    }
+
+    func sendSessionEnd(exerciseType: String, setCount: Int, restDuration: Int, workoutDurationMinutes: Int, completion: @escaping (Bool, String) -> Void) {
+        if let urlError = validateBackendURLForCurrentDevice() {
+            completion(false, urlError)
+            return
+        }
+
+        let avgHeartRate = calculateAverageHeartRate()
+
+        var payload: [String: Any] = [
+            "heart_rate": Int(avgHeartRate),
+            "current_speed": 0,
+            "exercise_type": exerciseType,
+            "set_count": setCount,
+            "rest_duration": max(restDuration, 0),
+            "workout_duration_minutes": max(workoutDurationMinutes, 0)
+        ]
+
+        self.sendAuthenticatedWatchRequest(path: "/api/watch/session-end", payload: payload) { success, json, errorMessage in
+            DispatchQueue.main.async {
+                if !success {
+                    completion(false, errorMessage ?? "Failed to record session")
+                    return
+                }
+
+                let counted = (json?["counted"] as? Bool) ?? false
+                let reason = json?["reason"] as? String
+                let message = (json?["message"] as? String) ?? (counted ? "Workout session recorded" : "Session not counted")
+                if counted {
+                    completion(true, message)
+                } else {
+                    completion(true, reason ?? message)
                 }
             }
         }

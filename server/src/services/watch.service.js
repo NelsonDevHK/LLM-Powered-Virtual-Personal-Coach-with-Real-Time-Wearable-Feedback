@@ -8,6 +8,7 @@ import wearableRepository from '../database/repositories/wearable_repository.js'
 import ragService from './rag.service.js';
 import { getLLMResponse } from './llm_client.js';
 import llmGateService from './llm_gate.service.js';
+import progressService from './progress.service.js';
 import logger from '../utils/logger.js';
 
 const SESSION_CONTEXT_TTL_MS = Number(process.env.WATCH_SESSION_CACHE_TTL_MS || 60 * 60 * 1000);
@@ -263,6 +264,31 @@ class WatchService {
             };
         } catch (error) {
             logger.error(`Set-end error: ${error.message}`);
+            return {
+                success: false,
+                error: error.message,
+                statusCode: 500
+            };
+        }
+    }
+
+    /**
+     * End workout session and update streak / pet progress.
+     * @param {number} userId
+     * @param {Object} sessionData
+     * @returns {Promise<Object>}
+     */
+    async endSession(userId, sessionData) {
+        try {
+            const result = await progressService.recordSessionEnd(userId, sessionData);
+
+            if (result.success && result.counted) {
+                this._clearUserSessionCache(userId);
+            }
+
+            return result;
+        } catch (error) {
+            logger.error(`Session-end error: ${error.message}`);
             return {
                 success: false,
                 error: error.message,

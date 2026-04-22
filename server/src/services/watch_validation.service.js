@@ -102,6 +102,16 @@ class WatchValidationService {
             validatedData.rest_duration = null;
         }
 
+        if (payload.workout_duration_minutes !== undefined) {
+            if (!Number.isInteger(payload.workout_duration_minutes) || payload.workout_duration_minutes < 0) {
+                errors.push('workout_duration_minutes must be a non-negative integer (minutes)');
+            } else {
+                validatedData.workout_duration_minutes = payload.workout_duration_minutes;
+            }
+        } else {
+            validatedData.workout_duration_minutes = null;
+        }
+
         return {
             isValid: errors.length === 0,
             errors,
@@ -144,6 +154,25 @@ class WatchValidationService {
             sleep_duration: validatedData.sleep_duration,
             sleep_quality: validatedData.sleep_quality,
             rest_duration: validatedData.rest_duration
+        };
+    }
+
+    /**
+     * Prepare data for session-end streak updates
+     * @param {Object} validatedData
+     * @returns {Object}
+     */
+    prepareForSessionEnd(validatedData) {
+        return {
+            heart_rate: validatedData.heart_rate,
+            heart_rate_history: validatedData.heart_rate_history,
+            current_speed: validatedData.current_speed,
+            exercise_type: validatedData.exercise_type,
+            set_count: validatedData.set_count,
+            sleep_duration: validatedData.sleep_duration,
+            sleep_quality: validatedData.sleep_quality,
+            rest_duration: validatedData.rest_duration,
+            workout_duration_minutes: validatedData.workout_duration_minutes
         };
     }
 

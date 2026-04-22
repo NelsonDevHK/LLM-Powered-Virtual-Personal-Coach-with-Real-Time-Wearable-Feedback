@@ -1,6 +1,7 @@
 # Ignore Garmin Connect integration for separate testing
 server/GerminConnect/
 .env
+WORKING_PLAN.local.md
 
 /server/node_modules
 server/logs/chroma_db/
@@ -15,4 +16,4 @@ server/chroma/*/*.bin
 server/chroma/*/data_level*
 node_modules/
 
-AppleData/Fyp_WatchDataAPI/Fyp_WatchDataAPI.xcodeproj/
+AppleData/Fyp_WatchDataAPI/Fyp_WatchDataAPI.xcodeproj/.pbxproj
