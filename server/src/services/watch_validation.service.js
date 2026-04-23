@@ -49,11 +49,22 @@ class WatchValidationService {
 
         // Exercise type validation (required for set-end, optional for rest-feedback)
         if (payload.exercise_type) {
-            const validExerciseTypes = ['Strength', 'HIIT', 'Cardio', 'General'];
-            if (!validExerciseTypes.includes(payload.exercise_type)) {
+            // Accept exercise_type case-insensitively and normalize to canonical values
+            const typeMap = {
+                'strength': 'Strength',
+                'hiit': 'HIIT',
+                'cardio': 'Cardio',
+            };
+
+            const rawType = String(payload.exercise_type || '').trim();
+            const normalizedKey = rawType.toLowerCase();
+            const mapped = typeMap[normalizedKey];
+
+            if (!mapped) {
+                const validExerciseTypes = Object.values(typeMap);
                 errors.push(`invalid exercise_type: must be one of ${validExerciseTypes.join(', ')}`);
             } else {
-                validatedData.exercise_type = payload.exercise_type;
+                validatedData.exercise_type = mapped;
             }
         } else {
             validatedData.exercise_type = 'General';

@@ -138,7 +138,8 @@ class WatchService {
      * @private
      */
     async _generateFeedbackInternal(userId, sessionData, cacheKey, preparedData) {
-        const sessionContext = await this._getOrBuildSessionContext(userId, cacheKey);
+        // Pass current preparedData so RAG can consider the live session's exercise_type
+        const sessionContext = await this._getOrBuildSessionContext(userId, cacheKey, preparedData);
         const {
             profile,
             recentSessions,
@@ -308,7 +309,7 @@ class WatchService {
         const recentAvgRest = this._average((recentSessions || []).map((row) => Number(row.rest_duration)).filter(Number.isFinite));
         const inSessionHrHistory = Array.isArray(metrics?.heart_rate_history) ? metrics.heart_rate_history : [];
 
-        return `You are a real-time watch workout coach. Return exactly one short sentence (max 50 words), direct and actionable.
+        return `You are a real-time watch workout coach. Return exactly one sentence (max 50 words), direct and actionable.
 
 Current in-session metrics:
 - Exercise type: ${metrics.exercise_type}
@@ -341,12 +342,15 @@ Retrieved advice context:
 ${ragAdvice || 'No RAG context available.'}
 
 Rules:
+- Explicitly mention the Exercise type: ${metrics.exercise_type} 
 - Explicitly mention HR trend, zone status, and action.
 - Action must be one of: DELOAD, INCREASE_VOLUME, MAINTAIN.
 - If zone is above and trend is increasing, choose DELOAD.
 - If zone is below and trend is decreasing or stable, choose INCREASE_VOLUME.
 - Otherwise choose MAINTAIN.
 - Keep the sentence concrete and include at least one numeric value.
+- Tone need to be motivational and encouraging, while still being direct and actionable.
+- Use "!" or *() for emphasis when appropriate.
 
 Output only the one-sentence feedback.`;
     }
@@ -548,9 +552,42 @@ Output only the one-sentence feedback.`;
         return Boolean(entry && entry.expiresAt && entry.expiresAt > Date.now());
     }
 
-    async _getOrBuildSessionContext(userId, cacheKey) {
+    async _getOrBuildSessionContext(userId, cacheKey, currentMetrics = null) {
         const cached = this.sessionContextCache.get(cacheKey);
         if (this._isCacheEntryValid(cached)) {
+            // If caller provided current in-session metrics, refresh only the RAG advice
+            // so RAG queries can consider the live exercise_type while keeping the cached profile/recentSessions.
+            if (currentMetrics && typeof currentMetrics === 'object') {
+                try {
+                    const wearableData = Array.isArray(cached.recentSessions) ? cached.recentSessions.slice() : [];
+                    const currentRow = {
+                        heart_rate: currentMetrics.heart_rate ?? null,
+                        exercise_type: currentMetrics.exercise_type ?? null,
+                        set_count: currentMetrics.set_count ?? null,
+                        sleep_duration: currentMetrics.sleep_duration ?? null,
+                        sleep_quality: currentMetrics.sleep_quality ?? null,
+                        rest_duration: currentMetrics.rest_duration ?? null,
+                        recorded_at: new Date().toISOString()
+                    };
+                    wearableData.push(currentRow);
+                    const groupedUserData = {
+                        user_id: userId,
+                        gender: cached.profile?.gender || 'Unknown',
+                        age_group: this._toAgeGroup(cached.profile?.age),
+                        exercise_level: cached.profile?.exercise_level || 'Unknown',
+                        fitness_goal: cached.profile?.fitness_goal || null,
+                        injuries: cached.profile?.injuries || null,
+                        wearable_data: wearableData
+                    };
+                    const ragAdviceArr = await ragService.getAdviceContent(userId, groupedUserData, { useGate: false });
+                    const ragAdvice = Array.isArray(ragAdviceArr) ? ragAdviceArr.join('\n') : '';
+                    return { ...cached, ragAdvice };
+                } catch (err) {
+                    logger.warn(`RAG lookup (cached refresh) failed for user ${userId}: ${err.message}`);
+                    return cached;
+                }
+            }
+
             return cached;
         }
 
@@ -559,6 +596,22 @@ Output only the one-sentence feedback.`;
             wearableRepository.findRecentByUserId(userId, 5)
         ]);
 
+        const wearableData = Array.isArray(recentSessions) ? recentSessions.slice() : [];
+        // If current in-session metrics are provided, append them so RAG treats them as the most recent
+        if (currentMetrics && typeof currentMetrics === 'object') {
+            // Ensure we push an object shaped similarly to DB rows (exercise_type, heart_rate, etc.)
+            const currentRow = {
+                heart_rate: currentMetrics.heart_rate ?? null,
+                exercise_type: currentMetrics.exercise_type ?? null,
+                set_count: currentMetrics.set_count ?? null,
+                sleep_duration: currentMetrics.sleep_duration ?? null,
+                sleep_quality: currentMetrics.sleep_quality ?? null,
+                rest_duration: currentMetrics.rest_duration ?? null,
+                recorded_at: new Date().toISOString()
+            };
+            wearableData.push(currentRow);
+        }
+
         const groupedUserData = {
             user_id: userId,
             gender: profile?.gender || 'Unknown',
@@ -566,7 +619,7 @@ Output only the one-sentence feedback.`;
             exercise_level: profile?.exercise_level || 'Unknown',
             fitness_goal: profile?.fitness_goal || null,
             injuries: profile?.injuries || null,
-            wearable_data: recentSessions || []
+            wearable_data: wearableData
         };
 
         let ragAdvice = '';

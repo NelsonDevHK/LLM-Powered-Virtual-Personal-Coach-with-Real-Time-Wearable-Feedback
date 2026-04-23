@@ -40,6 +40,7 @@ class RagService {
         // Use the last entry's exercise_type (most recent)
         exerciseType = userDict.wearable_data[userDict.wearable_data.length - 1].exercise_type || 'any';
       }
+      logger.info(`RagService: derived exerciseType='${exerciseType}' from grouped data (will be used as RAG filter)`);
 
       // 4. Query RAG
       const advice = await queryRAG(prompt, topK, { exerciseType: exerciseType });
