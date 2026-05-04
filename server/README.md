@@ -4,6 +4,24 @@ the backend will require the ollama server and chromadb server to start before u
 
 ## How to run
 
+### Environment setup (required)
+
+```bash
+cd server
+cp .env.example .env
+```
+
+Then edit `.env` and set at least:
+
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `DB_HOST`
+- `DB_PORT`
+
+If your MySQL root account has a password, leaving `DB_PASSWORD` empty will cause:
+`Access denied for user 'root'@'localhost' (using password: NO)`
+
 ### ***Chroma***: for store and search embeddings. 
 
 ```bash

@@ -69,6 +69,7 @@ class WatchService {
      * @returns {Promise<Object>}
      */
     async generateInSessionFeedback(userId, sessionData) {
+        const startedAt = Date.now();
         try {
             const validation = watchValidationService.validateSessionPayload({
                 user_id: userId,
@@ -76,7 +77,9 @@ class WatchService {
             });
 
             if (!validation.isValid) {
+                const elapsedMs = Date.now() - startedAt;
                 logger.warn(`In-session feedback validation failed for user ${userId}`);
+                logger.info(`📣 In-session feedback response for user ${userId} in ${elapsedMs}ms | rejected due to validation error`);
                 return {
                     success: false,
                     errors: validation.errors,
@@ -84,7 +87,7 @@ class WatchService {
                 };
             }
 
-            return llmGateService.runExclusive(userId, 'watch-feedback', async () => {
+            const result = await llmGateService.runExclusive(userId, 'watch-feedback', async () => {
                 watchValidationService.logValidation(validation, 'in-session-feedback');
                 const preparedData = watchValidationService.prepareForRestFeedback(validation.data);
                 const cacheKey = this._getSessionCacheKey(userId, sessionData);
@@ -123,8 +126,23 @@ class WatchService {
 
                 return result;
             });
+
+            const elapsedMs = Date.now() - startedAt;
+            if (result?.success) {
+                logger.info(
+                    `📣 In-session feedback response for user ${userId} in ${elapsedMs}ms | suggestion="${String(result.suggestion || '').replace(/\s+/g, ' ').trim()}" | metrics=${JSON.stringify(result.metrics)} | context=${JSON.stringify(result.context)}`
+                );
+            } else {
+                logger.info(
+                    `📣 In-session feedback response for user ${userId} in ${elapsedMs}ms | error=${String(result?.error || 'unknown error')}`
+                );
+            }
+
+            return result;
         } catch (error) {
+            const elapsedMs = Date.now() - startedAt;
             logger.error(`In-session feedback generation error: ${error.message}`);
+            logger.info(`📣 In-session feedback response for user ${userId} in ${elapsedMs}ms | error=${error.message}`);
             return {
                 success: false,
                 error: error.message,
@@ -167,8 +185,7 @@ class WatchService {
             suggestion = this._generateFallbackRestSuggestion(preparedData, profile, recentSessions, hrAnalysis);
         }
 
-        suggestion = this._enforceSpecificFeedback(suggestion, hrAnalysis, preparedData, profile);
-        suggestion = this._trimToSingleSentence(suggestion);
+        // Allow LLM's natural coaching language; don't enforce rigid structure or trim to single sentence
 
         return {
             success: true,
@@ -309,7 +326,7 @@ class WatchService {
         const recentAvgRest = this._average((recentSessions || []).map((row) => Number(row.rest_duration)).filter(Number.isFinite));
         const inSessionHrHistory = Array.isArray(metrics?.heart_rate_history) ? metrics.heart_rate_history : [];
 
-        return `You are a real-time watch workout coach. Return exactly one sentence (max 50 words), direct and actionable.
+        return `You are an expert real-time workout coach. Give 2-3 personalized, varied sentences of actionable coaching advice (NOT robotic rules). Sound encouraging and knowledgeable, like a human trainer, not a template.
 
 Current in-session metrics:
 - Exercise type: ${metrics.exercise_type}
@@ -341,18 +358,20 @@ Computed HR analysis (must use this):
 Retrieved advice context:
 ${ragAdvice || 'No RAG context available.'}
 
-Rules:
-- Explicitly mention the Exercise type: ${metrics.exercise_type} 
-- Explicitly mention HR trend, zone status, and action.
-- Action must be one of: DELOAD, INCREASE_VOLUME, MAINTAIN.
-- If zone is above and trend is increasing, choose DELOAD.
-- If zone is below and trend is decreasing or stable, choose INCREASE_VOLUME.
-- Otherwise choose MAINTAIN.
-- Keep the sentence concrete and include at least one numeric value.
-- Tone need to be motivational and encouraging, while still being direct and actionable.
-- Use "!" or *() for emphasis when appropriate.
+Coaching Style Guide:
+- Be conversational and personal, like a real coach, not rule-based.
+- Mention ${metrics.exercise_type} and current HR (${metrics.heart_rate} bpm, zone: ${hrAnalysis.zoneStatus}).
+- Consider recovery: sleep ${metrics.sleep_duration ?? 'unknown'} min, rest ${metrics.rest_duration ?? 'unknown'} min—adjust advice based on recovery status.
+- HR trend is ${hrAnalysis.trend}—adapt coaching (don't just follow rigid rules).
+- Include at least one numeric value and be specific to THIS session.
+- Use empathy, motivation, and practical tips. Examples:
+  * "Your HR is climbing—let's dial back intensity and focus on form for the next 2 sets."
+  * "Great recovery this morning; your body's ready, so push harder on this set."
+  * "You're at ${metrics.heart_rate} bpm and looking strong. Keep the pace steady and nail your form."
+- Vary your advice—don't repeat the same template every time.
+- Tone: encouraging, knowledgeable, human (like talking to a trainer, not a bot).
 
-Output only the one-sentence feedback.`;
+Output 2-3 sentences of personalized coaching.`;
     }
 
     /**
